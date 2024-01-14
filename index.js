@@ -5,13 +5,31 @@ const crypto = require('crypto');
 const jm = require('json-db-memory');
 const fs = require('fs');
 const { default: JsonDataStore } = require('json-db-memory');
+var DB = {};
 
 console.log( '>>> NEW TAX INSTANCE <<<' );
 console.log( '--- Process/Environment Variables ---' );
 console.log( process.env );
 console.log( '-------------------------------------' );
 
-// Initialize JSON-DB-MEMORY
+// Initialize Shared Memory
+var SharedMemory_FileList;
+
+function DatabaseList(){
+    console.group( "DatabaseList()" );
+    console.log( "Clear SharedMemory_FileList..." );
+    SharedMemory_FileList = [];
+    fs.readdir( './node_modules/json-db-memory/data', function( err, files ){
+        if( err ){
+            console.error('Unable to scan directory: ' + err );
+        }
+        console.log( files.length + " file(s) discovered:" );
+        console.log( files );
+        SharedMemory_FileList = files.filter( (element) => element != "example.json" && element != "testData.json"  ).sort();
+    });
+    console.groupEnd();
+}
+DatabaseList();
 
 const CreateWindow = () => {
     const win = new BrowserWindow({
@@ -52,41 +70,50 @@ app.on('window-all-closed', () => {
  *              method: 'DatabaseCreate',
  *              year: 2024
  *          }
+ *   - Load an Existing Database:
+ *      Request:
+ *          {
+ *              method: 'DatabaseLoad',
+ *              file: 'filename-without-ext'
+ *          }
  * 
  */
 electronIpcMain.handle('engine', async ( event, MyObject ) => {
+    console.group("Invoke 'index.js'");
+    console.log( MyObject );
     if( MyObject.constructor === Object ){
         if( MyObject.method == "DatabaseCreate" ){ 
-            var response = await DatabaseCreate(MyObject)
+            var response = await DatabaseCreate( MyObject );
         }
-
+        if( MyObject.method == "DatabaseLoad" ){
+            var response = await DatabaseLoad( MyObject );
+        }
+        if( MyObject.method == "GetDatabase" ){
+            var response = DB;
+        }
+        if( MyObject.method == "GetAppContext" ){
+            var response = {
+                name: "CompilaTAX",
+                dbfiles: SharedMemory_FileList
+            };
+        }
+        console.log( "Response -> ");
+        console.log( response );
+        console.groupEnd();
         return response;
     }else{
+        console.log( 'ERROR - MyObject is not an Object!' );
+        console.groupEnd();
         return false;
     }
 });
 
-electronIpcMain.handle('test', ( event, Message ) => {
-    console.log("Test");
-    console.log( Message );
-    return "ABC";
-});
 
 function DatabaseCreate( ReqObject ){
-    console.log( `Call to: DatabaseCreate() `);
-    console.log( ReqObject );
     var dbName = ReqObject.year;
     // Look for an existing file
-    var existingFiles = [];
-    fs.readdir( './node_modules/json-db-memory/data', function( err, files ){
-        if( err ){
-            console.log('Unable to scan directory: ' + err );
-        }
-        files.forEach(function(file){
-            existingFiles.push( file );
-        });
-        console.log( existingFiles );
-    });
+    var existingFiles = DatabaseList();
+    
     if( existingFiles.includes( dbName + ".json" )){
         console.error("DATABASE ALREADY EXISTS!");
         return false;
@@ -98,28 +125,20 @@ function DatabaseCreate( ReqObject ){
         myDB.set( 'domains', '[]' );
         myDB.set( 'receipts', '[]' );
 
-        var DB =  DatabaseLoad( { file: dbName } );
-        console.log( 'Result of DatabaseCreate: ');
-        console.log( DB );
-        return DB;
+        return true;
     }
 
 }
 
 function DatabaseLoad( ReqObject ){
-    console.log( `Call to: DatabaseLoad()` );
-    console.log( ReqObject );
     var myDB = new JsonDataStore( ReqObject.file );
-
     var MyObj = {
         info: JSON.parse( myDB.get("info") ),
         supplier: JSON.parse( myDB.get("suppliers") ),
         person: JSON.parse( myDB.get("persons") ),
         domain: JSON.parse( myDB.get("domains") ),
         receipt: JSON.parse( myDB.get("receipts") )
-    } 
-
-    console.log( 'Result of DatabaseLoad: ');
-    console.log( MyObj );
-    return JSON.stringify( MyObj) ;
+    }
+    DB = MyObj;
+    return true ;
 }

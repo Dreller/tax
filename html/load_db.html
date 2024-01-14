@@ -16,30 +16,32 @@
   </head>
   <body class="container-lg">
     <h1 id="AppTitle" class="display-6 pb-3 mb-3 border-bottom">{AppName}</h1>
-    <div class="container">
-      <div class="row">
-        <div class="col-8">
-          <p class="h4">List of existing files</p>
-          <ul id="FileList" class="list-unstyled">
-
-          </ul>
+    <div id="LoadingProgress">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden" id="LoadingProgressLabel">Loading Database...</span>
         </div>
-        <div class="col-4 text-end">
-          <a class="icon-link icon-link-hover" href="create_db.html">
-            New Database
-            <svg class="bi" aria-hidden="true"><use xlink:href="../node_modules/bootstrap-icons/bootstrap-icons.svg#arrow-right"></use></svg>
-          </a>
-        </div>
-      </div>
     </div>
+
   </body>
-
   <script>
-    
-
 
       $(document).ready(function(){
-        GetAppData({filelist: "FileList"});
+        GetAppData();
+
+        // Load Actual DB in Memory
+        var FileName = (urlParams.get("file")).split(".")[0];
+        console.log( "FileName=" + FileName );
+        ipcRender.invoke( 'engine', { method: "DatabaseLoad", file: FileName } )
+        .then( (response) => {
+            if( typeof response == "boolean" && response == true ){
+                window.location.replace('home.html' );
+            }else{
+                Tell( { title: "Error", content: "Error when attempting to load the database:<br> " + response } );
+                return;
+            }
+        });
+
       });
+
   </script>
 </html>

@@ -10,7 +10,6 @@ const ipc = {
         'receive': [],
         // Data Exchange (bidirection)
         'sendReceive':[
-            'test',
             'engine'
         ]
     }
@@ -34,10 +33,7 @@ contextBridge.exposeInMainWorld(
         // Data Exchange
         invoke: ( channel, args ) => {
             if( ipc.render.sendReceive.includes( channel )){
-                var response = ipcRenderer.invoke( channel, args );
-                console.log( 'PRELOAD > Response from .Invoke: ');
-                console.log( response );
-                return response;
+                return ipcRenderer.invoke( channel, args );
             }
         }
 

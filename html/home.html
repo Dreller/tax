@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';" />
+    <script src="../node_modules/jquery/dist/jquery.min.js"></script>
+    <script src="../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/core.js"></script>
+    <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../node_modules/bootstrap-icons/font/bootstrap-icons.min.css">
+    <script>
+      
+    </script>
+    <title>{AppName}</title>
+  </head>
+  <body class="container-lg">
+    <div class="row mb-3 pb-3 border-bottom">
+        <div class="col lead" id="AppTitle" style="font-weight: 500;">{AppName}</div>
+        <div class="col lead text-end" id="TaxYearTitle">{TaxYearTitle}</div>
+    </div>
+    <div class="row mb-3 pb-3">
+        <div class="col-10" id="AppBreadcrumb"></div>
+        <div class="col-2 text-end" id="AppMenu">
+            <div class="dropdown">
+                <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  Main Menu
+                </button>
+                <ul class="dropdown-menu">
+                  <li><a class="dropdown-item" href="#" onclick="showConfigList('supplier');">Suppliers</a></li>
+                  <li><a class="dropdown-item" href="#" onclick="showConfigList('person')">Persons</a></li>
+                  <li><a class="dropdown-item" href="#" onclick="showConfigList('domain')">Domains</a></li>
+                </ul>
+              </div>
+        </div>
+    </div>
+
+
+
+
+
+
+
+
+
+    <div id="configList" class="container-lg invisible">
+        
+        <table id="configTable" class="table table-hover">
+
+        </table>
+    </div>
+
+
+
+  </body>
+  <script>
+
+    function showConfigList( listType = "supplier" ){
+
+        $("#configList").removeClass("invisible");
+        $("#configTable").find("tr").remove();
+
+        if( listType == "supplier" ){
+            $("#configTable").append(`<tr><th>Domain</th><th>Name</th><th>Address</th><th>Phone</th><th>Other Contact</th></tr>`);
+            Database.supplier.forEach( function( thisItem ){
+                $("$configTable").append(`<tr id="${thisItem.id}"><td>${thisItem.domain}</td><td>${thisItem.name}</td><td>${thisItem.address}</td><td>${thisItem.phone}</td><td>${thisItem.contact}</td></tr>`);
+            });
+        }
+        if( listType == "person" ){
+            $("#configTable").append(`<tr><th>Name</th><th>Initial</th><th>Partner</th></tr>`);
+            Database.supplier.forEach( function( thisItem ){
+                $("$configTable").append(`<tr id="${thisItem.id}"><td>${thisItem.name}</td><td>${thisItem.initial}</td><td>${thisItem.partner}</td></tr>`);
+            });
+        }
+        if( listType == "domain" ){
+            $("#configTable").append(`<tr><th>Name</th></tr>`);
+            Database.supplier.forEach( function( thisItem ){
+                $("$configTable").append(`<tr id="${thisItem.id}"><td>${thisItem.name}</td></tr>`);
+            });
+        }
+
+    }
+
+      $(document).ready(function(){
+        GetAppData();
+
+        $("#AppBreadcrumb").html( DrawBreadcrumb([
+            
+        ]) );
+
+        // Retrieve the Database content
+        ipcRender.invoke( 'engine', { method: "GetDatabase" } )
+        .then( (response) => {
+            Database = response;
+            $("#TaxYearTitle").html("Tax Year " + Database.info.year );
+        });
+
+      });
+  </script>
+</html>
