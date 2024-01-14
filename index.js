@@ -21,6 +21,7 @@ const CreateWindow = () => {
         autoHideMenuBar: false,
         webPreferences: {
             preload: path.join( __dirname  + '/preload.js' ),
+            nodeIntegration: true,
             contextIsolation: true
         }
     });
@@ -53,9 +54,13 @@ app.on('window-all-closed', () => {
  *          }
  * 
  */
-electronIpcMain.handle('engine', ( event, MyObject ) => {
+electronIpcMain.handle('engine', async ( event, MyObject ) => {
     if( MyObject.constructor === Object ){
-        if( MyObject.method == "DatabaseCreate" ){ DatabaseCreate(MyObject) }
+        if( MyObject.method == "DatabaseCreate" ){ 
+            var response = await DatabaseCreate(MyObject)
+        }
+
+        return response;
     }else{
         return false;
     }
@@ -88,11 +93,12 @@ function DatabaseCreate( ReqObject ){
     }else{
         var myDB = new JsonDataStore( dbName );
         myDB.set( 'info', JSON.stringify({year: ReqObject.year}) );
-        myDB.set( 'suppliers', '' );
-        myDB.set( 'persons', '' );
-        myDB.set( 'domains', '' );
+        myDB.set( 'suppliers', '[]' );
+        myDB.set( 'persons', '[]' );
+        myDB.set( 'domains', '[]' );
+        myDB.set( 'receipts', '[]' );
 
-        var DB = DatabaseLoad( { file: dbName } );
+        var DB =  DatabaseLoad( { file: dbName } );
         console.log( 'Result of DatabaseCreate: ');
         console.log( DB );
         return DB;
@@ -104,13 +110,16 @@ function DatabaseLoad( ReqObject ){
     console.log( `Call to: DatabaseLoad()` );
     console.log( ReqObject );
     var myDB = new JsonDataStore( ReqObject.file );
-    var wip = {
+
+    var MyObj = {
         info: JSON.parse( myDB.get("info") ),
-        suppliers: myDB.get("suppliers").split(";"),
-        persons: myDB.get("persons").split(";"),
-        domains: myDB.get("domains").split(";")
-    }
+        supplier: JSON.parse( myDB.get("suppliers") ),
+        person: JSON.parse( myDB.get("persons") ),
+        domain: JSON.parse( myDB.get("domains") ),
+        receipt: JSON.parse( myDB.get("receipts") )
+    } 
+
     console.log( 'Result of DatabaseLoad: ');
-    console.log( wip );
-    return wip;
+    console.log( MyObj );
+    return JSON.stringify( MyObj) ;
 }

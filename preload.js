@@ -34,7 +34,10 @@ contextBridge.exposeInMainWorld(
         // Data Exchange
         invoke: ( channel, args ) => {
             if( ipc.render.sendReceive.includes( channel )){
-                return ipcRenderer.invoke( channel, args );
+                var response = ipcRenderer.invoke( channel, args );
+                console.log( 'PRELOAD > Response from .Invoke: ');
+                console.log( response );
+                return response;
             }
         }
 

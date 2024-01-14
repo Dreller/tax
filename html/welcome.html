@@ -22,9 +22,10 @@
   <script>
     function NewDataPack(){
       var fullJSON = {};
-      window.ipcRender.invoke('engine', {method: "DatabaseCreate", year: 2023 })
+      ipcRender.invoke('engine', {method: "DatabaseCreate", year: 2023 })
       .then( (response) => {
-        fullJSON = response;
+        fullJSON = JSON.parse( response );
+        console.log( fullJSON );
       } );
     }
 
