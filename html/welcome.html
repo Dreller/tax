@@ -21,11 +21,12 @@
   </body>
   <script>
     function NewDataPack(){
-      window.ipcRender.invoke('engine', {method: "new", year: 2023 });
-
+      var fullJSON = {};
+      window.ipcRender.invoke('engine', {method: "DatabaseCreate", year: 2023 })
+      .then( (response) => {
+        fullJSON = response;
+      } );
     }
-
-
 
 
       $(document).ready(function(){
