@@ -21,10 +21,7 @@
   </body>
   <script>
     function NewDataPack(){
-      window.ipcRender.invoke('test', {})
-      .then((response) => {
-        console.log( "RESPONSE--> '" + response + "'");
-      })
+      window.ipcRender.invoke('engine', {method: "new", year: 2023 });
 
     }
 

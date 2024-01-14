@@ -10,7 +10,8 @@ const ipc = {
         'receive': [],
         // Data Exchange (bidirection)
         'sendReceive':[
-            'test'
+            'test',
+            'engine'
         ]
     }
 }
