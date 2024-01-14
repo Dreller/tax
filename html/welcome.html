@@ -4,14 +4,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';" />
+    <script src="../node_modules/jquery/dist/jquery.min.js"></script>
+    <script src="../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
-    <title>Hello World!</title>
+    <script>
+      
+    </script>
+    <title>CompilaTAX</title>
   </head>
   <body>
-    <h1>Hello World!</h1>
+    <h1>CompilaTAX</h1>
     We are using Node.js <span id="node-version"></span>,
     Chromium <span id="chrome-version"></span>,
     and Electron <span id="electron-version"></span>.
+    <button type="button" onclick="NewDataPack()">TEST</button>
   </body>
-  <script src="../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    function NewDataPack(){
+      window.ipcRender.invoke('test', {})
+      .then((response) => {
+        console.log( "RESPONSE--> '" + response + "'");
+      })
+
+    }
+
+
+
+
+      $(document).ready(function(){
+
+      });
+  </script>
 </html>

@@ -1,4 +1,15 @@
 const { app, BrowserWindow } = require('electron');
+const electronIpcMain = require('electron').ipcMain;
+const path = require('node:path');
+const crypto = require('crypto');
+const jm = require('json-db-memory');
+
+console.log( '>>> NEW TAX INSTANCE <<<' );
+console.log( '--- Process/Environment Variables ---' );
+console.log( process.env );
+console.log( '-------------------------------------' );
+
+// Initialize JSON-DB-MEMORY
 
 const CreateWindow = () => {
     const win = new BrowserWindow({
@@ -7,15 +18,12 @@ const CreateWindow = () => {
         center: true,
         autoHideMenuBar: false,
         webPreferences: {
-            nodeIntegration: true
+            preload: path.join( __dirname  + '/preload.js' ),
+            contextIsolation: true
         }
-    })
-
-    let $ = require('jquery');
-    win.$ = $;
-
+    });
+    
     win.loadFile('./html/welcome.html');
-
     win.webContents.openDevTools();
 }
 
@@ -29,4 +37,10 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
     if( process.platform !== 'darwin' ) app.quit();
-})
+});
+
+electronIpcMain.handle('test', ( event, Message ) => {
+    console.log("Test");
+    console.log( Message );
+    return "ABC";
+});

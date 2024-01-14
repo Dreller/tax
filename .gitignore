@@ -1,3 +1,6 @@
+# Custom to this project
+*.jtax
+
 # Sources:
 # - https://github.com/github/gitignore/blob/main/Node.gitignore
 
