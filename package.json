@@ -1,0 +1,20 @@
+{
+  "name": "tax",
+  "version": "0.0.1",
+  "description": "Utility to compile Receipts and other Information for Canadian Taxes.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "electron .",
+    "rebuild": "./node_modules/.bin/electron-rebuild"
+  },
+  "author": "Dreller",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^28.1.1"
+  },
+  "dependencies": {
+    "bootstrap": "^5.3.2",
+    "jquery": "^3.7.1"
+  }
+}
