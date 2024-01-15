@@ -7,8 +7,10 @@
     <script src="../node_modules/jquery/dist/jquery.min.js"></script>
     <script src="../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="../js/core.js"></script>
+    <script src="../node_modules/pikaday/pikaday.js"></script>
     <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="../node_modules/bootstrap-icons/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="../node_modules/pikaday/css/pikaday.css">
     <script>
       
     </script>
@@ -20,13 +22,15 @@
         <div class="col lead text-end" id="TaxYearTitle">{TaxYearTitle}</div>
     </div>
     <div class="row mb-3 pb-3">
-        <div class="col-10" id="AppBreadcrumb"></div>
+        <div class="col-10 display-6" id="AppSubtitle"></div>
         <div class="col-2 text-end" id="AppMenu">
             <div class="dropdown">
                 <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                   Main Menu
                 </button>
                 <ul class="dropdown-menu">
+                  <li><a class="dropdown-item" href="#" onclick="backHome();">Home</a></li>
+                  <li><hr class="dropdown-divider"></li>
                   <li><a class="dropdown-item" href="#" onclick="showConfigList('supplier');">Suppliers</a></li>
                   <li><a class="dropdown-item" href="#" onclick="showConfigList('person')">Persons</a></li>
                   <li><a class="dropdown-item" href="#" onclick="showConfigList('domain')">Domains</a></li>
@@ -44,7 +48,6 @@
 
 
     <div id="configList" class="container-lg invisible">
-        <h1 id="configTitle" class="display-6"></h1>
         <button id="configAddNew" type="button" class="btn btn-primary" data-confkey="" onclick="showConfigItem(this);">Add New</button>
         <table id="configTable" class="table table-hover">
           <thead id="configTableHead">
@@ -54,8 +57,68 @@
         </table>
     </div>
 
+<!-- MODAL: Maintain Receipt -->
+<div id="modalReceipt" class="modal" data-bs-backdrop="static">
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Tax Receipt</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-2">
+          <div class="col-4 mb-3">
+            <label for="receiptPerson" class="form-label">Person</label>
+            <select class="form-select" id="receiptPerson" aria-label="Person" data-map="person" data-source="person"></select>
+          </div>
+          <div class="col-4 mb-3">
+            <label for="receiptDomain" class="form-label">Expense Domain</label>
+            <select class="form-select" id="receiptDomain" aria-label="Domain" data-map="domain" data-source="domain"></select>
+          </div>
+          <div class="col-4 mb-3">
+            <label for="receiptDate" class="form-label">Receipt Date</label>
+            <input type="text" class="form-control" id="receiptDate" placeholder="" data-map="date">
+          </div>
+        </div>
+        <div class="row g-2">
+          <div class="col-4 mb-3">
+            <label for="receiptSupplier" class="form-label">Supplier</label>
+            <select class="form-select" id="receiptSupplier" aria-label="Supplier" data-map="supplier" data-source="supplier" onchange="receiptSupplierInfo();"></select>
+          </div>
+          <div class="col-8 mb-3" id="receiptSupplierInfo">
+
+          </div>
+        </div>
+        <div class="row g-2">
+          <div class="col-8 mb-3">
+            <label for="receiptComment">Comment</label>
+            <textarea class="form-control" placeholder="" id="receiptComment" style="height: 180px" data-map="comment"></textarea>
+          </div>
+
+          <div class="col-4 mb-3 text-end">
+
+            <label for="receiptAmount" class="form-label text-end">Full Amount</label>
+            <input type="number" min="0" max="999999" step="0.01" class="form-control text-end" id="receiptAmount" data-map="amount" onchange="receiptCalculate();">
+
+            <label for="receiptRefund" class="form-label text-end">Insured Amount</label>
+            <input type="number" min="0" max="999999" step="0.01" class="form-control text-end" id="receiptRefund" data-map="refund" onchange="receiptCalculate();">
+
+            <label for="receiptPaid" class="form-label text-end">Paid Amount</label>
+            <input type="number" step="0.01" class="form-control-plaintext text-end" style="font-weight:bold;" id="receiptPaid" data-map="paid" readonly>
+
+          </div>
+        </div>
+      
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="saveReceipt();">Save</button>
+      </div>
+    </div>
+  </div>
+</div> <!-- /MODAL: Maintain Receipt -->
 <!-- MODAL: Maintain Domain -->
-<div id="configModalDomain" class="modal">
+<div id="configModalDomain" class="modal" data-bs-backdrop="static">
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
@@ -76,7 +139,7 @@
   </div>
 </div> <!-- /MODAL: Maintain Domain -->
 <!-- MODAL: Maintain Person -->
-<div id="configModalPerson" class="modal">
+<div id="configModalPerson" class="modal" data-bs-backdrop="static">
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
@@ -106,7 +169,7 @@
   </div>
 </div> <!-- /MODAL: Maintain Person -->
 <!-- MODAL: Maintain Supplier -->
-<div id="configModalSupplier" class="modal">
+<div id="configModalSupplier" class="modal" data-bs-backdrop="static">
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
@@ -114,7 +177,33 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        
+        <div class="mb-3">
+          <label for="configSupplierDomain" class="form-label">Expense Domain</label>
+          <select class="form-select" id="configSupplierDomain" aria-label="Expense Domain" data-map="domain" data-source="domain">
+          </select>
+        </div>
+        <div class="mb-3">
+          <label for="configSupplierName" class="form-label">Name</label>
+          <input type="text" class="form-control" id="configSupplierName" placeholder="Acme inc." data-map="name">
+        </div>
+        <div class="mb-3">
+          <label for="configSupplierAddress">Address</label>
+          <textarea class="form-control" placeholder="" id="configSupplierAddress" style="height: 60px" data-map="address"></textarea>
+        </div>
+        <div class="row g-2">
+          <div class="col-md mb-3">
+            <label for="configSupplierPhone" class="form-label">Phone Number</label>
+            <input type="tel" class="form-control" id="configSupplierPhone" data-map="phone">
+          </div>
+          <div class="col-md mb-3">
+            <label for="configSupplierContact" class="form-label">Other Contact Method</label>
+            <input type="text" class="form-control" id="configSupplierContact" data-map="contact">
+          </div>
+        </div>
+        <div class="mb-3">
+          <label for="configSupplierTax" class="form-label">Tax Registration Numbers</label>
+          <input type="text" class="form-control" id="configSupplierTax" placeholder="" data-map="tax">
+        </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -129,8 +218,92 @@
     var currentConfigItem = "";
     var currentConfigType = "";
 
-    function saveConfigItem(){
+    var currentReceiptId = "";
+    var picker;
 
+    function backHome(){
+      $("#AppSubtitle").removeClass("display-6");
+      $("#AppSubtitle").html(`<button type="button" class="btn btn-primary" onclick="showReceipt(this);" data-reckey="">Add a Receipt</button>`);
+      currentConfigItem = "";
+      currentConfigType = "";
+      $("#configList").addClass("invisible");
+    }
+
+    function receiptSupplierInfo(){
+      var thisSupplier = Database.supplier.filter( x => x.id == $("#receiptSupplier").val() )[0];
+      if( thisSupplier === undefined ){
+        $("#receiptSupplierInfo").html("");
+      }else{
+        $("#receiptSupplierInfo").html( `${thisSupplier.address}<br>${thisSupplier.phone}<br>${thisSupplier.tax}`  );
+      }
+    }
+
+    function receiptCalculate(){
+      var FullAmount = $("#receiptAmount").val();
+      if( FullAmount === undefined ){
+        FullAmount = 0;
+      }
+      FullAmount = (Math.round(FullAmount * 100) / 100).toFixed(2);
+      $("#receiptAmount").val(FullAmount);
+
+      var RefundAmount = $("#receiptRefund").val();
+      if( RefundAmount === undefined ){
+        RefundAmount = 0;
+      }
+      RefundAmount = (Math.round(RefundAmount * 100) / 100).toFixed(2);
+      $("#receiptRefund").val(RefundAmount);
+
+      var NetAmount = FullAmount - RefundAmount;
+      NetAmount = (Math.round(NetAmount * 100) / 100).toFixed(2);
+      $("#receiptPaid").val( NetAmount );
+
+      console.log( `${FullAmount} - ${RefundAmount} = ${NetAmount}` );
+    }
+
+    function saveReceipt(){
+      console.log("DATE: " + picker.toString('YYYY-MM-DD') );
+    }
+
+    function showReceipt( caller ){
+      currentReceiptId = $(caller).data('reckey');
+      var thisDomModal = "modalReceipt";
+      var thisModal = new bootstrap.Modal( $("#" + thisDomModal ) );
+      console.log( "showReceipt, ID:" + currentReceiptId);
+      // Reset Form
+      $("#" + thisDomModal + " input,select,textarea").each( function( ndx, thisControl ){
+        $(thisControl).val("");
+        // Process Select Lists
+        console.log( " Control= " + thisControl.id );
+        console.log( " Datasource=" + $(thisControl).data("source") );
+        var thisSource = $(thisControl).data("source");
+        if( thisSource !== undefined ){
+          $(thisControl).empty();
+          $(thisControl).append(`<option value="">None</option>`);
+          Database[thisSource].forEach( function( thisItem ){
+            $(thisControl).append(`<option value="${thisItem.id}">${thisItem.name}</option>`);
+          } )
+        }
+      });
+
+      // Retrieve the existing Data
+      if( currentReceiptId.length > 0 ){
+        var thisReceipt = Database.receipt.filter( x => x.id == currentReceiptId )[0];
+      }
+
+    // Fill Form with Existing Data
+      if( thisReceipt !== undefined && currentReceiptId.length > 0 ){
+        $("#" + thisDomModal + " input,select,textarea").each( function( ndx, thisControl ){
+          var thisMap = $(thisControl).data("map");
+          $(thisControl).val( thisReceipt[thisMap] );
+        });
+      }
+
+    // Show Form
+      thisModal.show();
+    }
+
+
+    function saveConfigItem(){
       if( currentConfigItem.length > 0 ){
         Database[currentConfigType] = Database[currentConfigType].filter( x => x.id != currentConfigItem );
       }else{
@@ -141,7 +314,7 @@
       var newObject = {id: currentConfigItem }
     // Complete the object with data from the Form
       var thisDomModal = "configModal" + CT.ProperCase( currentConfigType );
-      $("#" + thisDomModal + " input,select").each( function( ndx, thisControl ){
+      $("#" + thisDomModal + " input,select,textarea").each( function( ndx, thisControl ){
         var thisMap = $(thisControl).data("map");
         newObject[thisMap] = $(thisControl).val();
       });
@@ -162,7 +335,7 @@
       var thisModal = new bootstrap.Modal( $("#" + thisDomModal ) );
 
     // Reset form
-      $("#" + thisDomModal + " input,select").each( function( ndx, thisControl ){
+      $("#" + thisDomModal + " input,select,textarea").each( function( ndx, thisControl ){
         $(thisControl).val("");
         // Process Select Lists
         console.log( " Control= " + thisControl.id );
@@ -184,7 +357,7 @@
 
     // Fill Form with Existing Data
       if( thisItem !== undefined && currentConfigItem.length > 0 ){
-        $("#" + thisDomModal + " input,select").each( function( ndx, thisControl ){
+        $("#" + thisDomModal + " input,select,textarea").each( function( ndx, thisControl ){
           var thisMap = $(thisControl).data("map");
           $(thisControl).val( thisItem[thisMap] );
         });
@@ -203,22 +376,24 @@
         $("#configTableBody").find("tr").remove();
         currentConfigType = listType;
 
+        $("#AppSubtitle").addClass("display-6");
+
         if( listType == "supplier" ){
-            $("#configTitle").html("Suppliers");
+            $("#AppSubtitle").html("Suppliers");
             $("#configTableHead").append(`<tr><th>Domain</th><th>Name</th><th>Address</th><th>Phone</th><th>Other Contact</th></tr>`);
             Database.supplier.forEach( function( thisItem ){
-                $("#configTableBody").append(`<tr data-confkey="${thisItem.id}" onclick="showConfigItem(this);"><td>${thisItem.domain}</td><td>${thisItem.name}</td><td>${thisItem.address}</td><td>${thisItem.phone}</td><td>${thisItem.contact}</td></tr>`);
+                $("#configTableBody").append(`<tr data-confkey="${thisItem.id}" onclick="showConfigItem(this);"><td>${ Database.domain.filter( x=> x.id == thisItem.domain )[0].name }</td><td>${thisItem.name}</td><td>${thisItem.address}</td><td>${thisItem.phone}</td><td>${thisItem.contact}</td></tr>`);
             });
         }
         if( listType == "person" ){
-            $("#configTitle").html("Persons");
+            $("#AppSubtitle").html("Persons");
             $("#configTableHead").append(`<tr><th>Name</th><th>Initial</th><th>Partner</th></tr>`);
             Database.person.forEach( function( thisItem ){
-                $("#configTableBody").append(`<tr data-confkey="${thisItem.id}" onclick="showConfigItem(this);"><td>${thisItem.name}</td><td>${thisItem.initial}</td><td>${thisItem.partner}</td></tr>`);
+                $("#configTableBody").append(`<tr data-confkey="${thisItem.id}" onclick="showConfigItem(this);"><td>${thisItem.name}</td><td>${thisItem.initial}</td><td>${ thisItem.partner != "" ? Database.person.filter( x=> x.id == thisItem.partner )[0].name : "" }</td></tr>`);
             });
         }
         if( listType == "domain" ){
-            $("#configTitle").html("Expense Domains");
+            $("#AppSubtitle").html("Expense Domains");
             $("#configTableHead").append(`<tr><th>Name</th></tr>`);
             Database.domain.forEach( function( thisItem ){
                 $("#configTableBody").append(`<tr data-confkey="${thisItem.id}" onclick="showConfigItem(this);"><td>${thisItem.name}</td></tr>`);
@@ -229,16 +404,22 @@
 
       $(document).ready(function(){
         GetAppData();
-
-        $("#AppBreadcrumb").html( DrawBreadcrumb([
-            
-        ]) );
+        backHome();
+        //$("#AppBreadcrumb").html( DrawBreadcrumb([]) );
 
         // Retrieve the Database content
         ipcRender.invoke( 'engine', { method: "GetDatabase" } )
         .then( (response) => {
             Database = response;
             $("#TaxYearTitle").html("Tax Year " + Database.info.year );
+
+            // https://www.npmjs.com/package/pikaday
+            picker = new Pikaday({
+              field: document.getElementById('receiptDate'),
+              minDate: new Date(Database.info.year + "-01-01"),
+              maxDate: new Date(Database.info.year + "-12-31")
+            });
+
         });
 
       });

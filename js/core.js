@@ -137,7 +137,7 @@ function Tell( Options = "" ){
 
     // Invoke the modal
     const domModal = document.getElementById( objUUID );
-    const thisModal = new bootstrap.Modal( domModal );
+    const thisModal = new bootstrap.Modal( domModal, {backdrop: false} );
     domModal.addEventListener('hidden.bs.modal', event => {
         $(`#${objUUID}`).remove();
     })
