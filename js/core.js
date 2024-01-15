@@ -1,6 +1,24 @@
 const IconSVG = "../node_modules/bootstrap-icons/bootstrap-icons.svg#";
+const debug = true;
+
 var AppData = {};
 var Database = {};
+
+const CT = {
+
+    ProperCase: function( text ){
+        var sWIP = text.charAt(0).toUpperCase() + text.substr(1).toLowerCase();
+        if( debug ){
+            console.groupCollapsed( "CT.ProperCase()" );
+            console.log( `Input: "${text}"` )
+            console.log( `Output: "${sWIP}"` )
+            console.groupEnd();
+        }
+        return sWIP;
+    }
+
+}
+
 
 // Fetch URL Parameters
 const urlParams = new URLSearchParams(window.location.search);
