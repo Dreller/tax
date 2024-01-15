@@ -6,6 +6,7 @@ const jm = require('json-db-memory');
 const fs = require('fs');
 const { default: JsonDataStore } = require('json-db-memory');
 var DB = {};
+var DBLINK;
 
 console.log( '>>> NEW TAX INSTANCE <<<' );
 console.log( '--- Process/Environment Variables ---' );
@@ -76,6 +77,13 @@ app.on('window-all-closed', () => {
  *              method: 'DatabaseLoad',
  *              file: 'filename-without-ext'
  *          }
+ *   - Save a segment in the Database:
+ *      Request: 
+            {
+                method: 'DatabaseSaveSegment',
+                segment: supplier|domain|person,
+                data: {}
+            }
  * 
  */
 electronIpcMain.handle('engine', async ( event, MyObject ) => {
@@ -84,6 +92,9 @@ electronIpcMain.handle('engine', async ( event, MyObject ) => {
     if( MyObject.constructor === Object ){
         if( MyObject.method == "DatabaseCreate" ){ 
             var response = await DatabaseCreate( MyObject );
+        }
+        if( MyObject.method == "DatabaseSaveSegment" ){
+            var response = await DatabaseSaveSegment( MyObject );
         }
         if( MyObject.method == "DatabaseLoad" ){
             var response = await DatabaseLoad( MyObject );
@@ -108,37 +119,46 @@ electronIpcMain.handle('engine', async ( event, MyObject ) => {
     }
 });
 
+function DatabaseSaveSegment( ReqObject ){
+    if( ReqObject.segment == "supplier" ){
+        DB.supplier = ReqObject.data;
+        DBLINK.set( "supplier", JSON.stringify( ReqObject.data ) );
+        return true;
+    }
+    if( ReqObject.segment == "domain" ){
+        DB.domain = ReqObject.data;
+        DBLINK.set( "domain", JSON.stringify( ReqObject.data ) );
+        return true;
+    }
+    if( ReqObject.segment == "person" ){
+        DB.person = ReqObject.data;
+        DBLINK.set( "person", JSON.stringify( ReqObject.data ) );
+        return true;
+    }
+    return false;
+}
 
 function DatabaseCreate( ReqObject ){
     var dbName = ReqObject.year;
-    // Look for an existing file
-    var existingFiles = DatabaseList();
-    
-    if( existingFiles.includes( dbName + ".json" )){
-        console.error("DATABASE ALREADY EXISTS!");
-        return false;
-    }else{
-        var myDB = new JsonDataStore( dbName );
-        myDB.set( 'info', JSON.stringify({year: ReqObject.year}) );
-        myDB.set( 'suppliers', '[]' );
-        myDB.set( 'persons', '[]' );
-        myDB.set( 'domains', '[]' );
-        myDB.set( 'receipts', '[]' );
+    DBLINK = new JsonDataStore( dbName );
+    DBLINK.set( 'info', JSON.stringify({year: ReqObject.year}) );
+    DBLINK.set( 'supplier', '[]' );
+    DBLINK.set( 'person', '[]' );
+    DBLINK.set( 'domain', '[]' );
+    DBLINK.set( 'receipt', '[]' );
 
-        return true;
-    }
-
+    return true;
 }
 
 function DatabaseLoad( ReqObject ){
-    var myDB = new JsonDataStore( ReqObject.file );
-    var MyObj = {
-        info: JSON.parse( myDB.get("info") ),
-        supplier: JSON.parse( myDB.get("suppliers") ),
-        person: JSON.parse( myDB.get("persons") ),
-        domain: JSON.parse( myDB.get("domains") ),
-        receipt: JSON.parse( myDB.get("receipts") )
+    DBLINK = new JsonDataStore( ReqObject.file );
+    var MyDB = {
+        info: JSON.parse( DBLINK.get("info") ),
+        supplier: JSON.parse( DBLINK.get("supplier") ),
+        person: JSON.parse( DBLINK.get("person") ),
+        domain: JSON.parse( DBLINK.get("domain") ),
+        receipt: JSON.parse( DBLINK.get("receipt") )
     }
-    DB = MyObj;
+    DB = MyDB;
     return true ;
 }

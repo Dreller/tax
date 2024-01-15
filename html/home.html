@@ -44,38 +44,121 @@
 
 
     <div id="configList" class="container-lg invisible">
-        
+        <h1 id="configTitle" class="display-6"></h1>
+        <button id="configAddNew" type="button" class="btn btn-primary" data-id="" onclick="showConfigItem(this);">Add New</button>
         <table id="configTable" class="table table-hover">
-
+          <thead id="configTableHead">
+          </thead>
+          <tbody id="configTableBody">
+          </tbody>
         </table>
     </div>
 
-
+<div id="configModalDomain" class="modal">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Expense Domain</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label for="configDomainName" class="form-label">Name</label>
+          <input type="text" class="form-control" id="configDomainName" placeholder="Medical Expense">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="saveDomain();">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="configModalSupplier" class="modal">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Supplier</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
 
   </body>
   <script>
+    var currentConfigItem = "";
+    var currentConfigType = "";
+
+
+
+    function saveDomain(){
+      if( currentConfigItem != "" ){
+        Database.domain = Database.domain.filter( x => x.id != currentConfigItem );
+      }else{
+        currentConfigItem = crypto.randomUUID();
+      }
+      Database.domain.push({
+        id: currentConfigItem,
+        name: $("#configDomainName").val().trim()
+      });
+      ipcRender.invoke( 'engine', { method: "DatabaseSaveSegment", segment: "domain", data: Database.domain } );
+      showConfigList( "domain" );
+    }
+
+
+
+
+    function showConfigItem( caller ){
+      var thisModal;
+      currentConfigItem = $(caller).data('confkey');
+      console.log( "CONFIG KEY = " + currentConfigItem );
+      if( currentConfigType == "domain" ){
+      $("#configDomainName").val("");
+        if( currentConfigItem != "" ){
+          var thisItem = Database.domain.filter( x => x.id == currentConfigItem )[0];
+          $("#configDomainName").val(thisItem.name);
+        }
+        thisModal = new bootstrap.Modal( $("#configModalDomain") ).show();
+      }
+
+
+
+    }
 
     function showConfigList( listType = "supplier" ){
 
         $("#configList").removeClass("invisible");
-        $("#configTable").find("tr").remove();
+        $("#configTableHead").find("tr").remove();
+        $("#configTableBody").find("tr").remove();
+        currentConfigType = listType;
 
         if( listType == "supplier" ){
-            $("#configTable").append(`<tr><th>Domain</th><th>Name</th><th>Address</th><th>Phone</th><th>Other Contact</th></tr>`);
+            $("#configTitle").html("Suppliers");
+            $("#configTableHead").append(`<tr><th>Domain</th><th>Name</th><th>Address</th><th>Phone</th><th>Other Contact</th></tr>`);
             Database.supplier.forEach( function( thisItem ){
-                $("$configTable").append(`<tr id="${thisItem.id}"><td>${thisItem.domain}</td><td>${thisItem.name}</td><td>${thisItem.address}</td><td>${thisItem.phone}</td><td>${thisItem.contact}</td></tr>`);
+                $("#configTableBody").append(`<tr data-confkey="${thisItem.id}"><td>${thisItem.domain}</td><td>${thisItem.name}</td><td>${thisItem.address}</td><td>${thisItem.phone}</td><td>${thisItem.contact}</td></tr>`);
             });
         }
         if( listType == "person" ){
-            $("#configTable").append(`<tr><th>Name</th><th>Initial</th><th>Partner</th></tr>`);
-            Database.supplier.forEach( function( thisItem ){
-                $("$configTable").append(`<tr id="${thisItem.id}"><td>${thisItem.name}</td><td>${thisItem.initial}</td><td>${thisItem.partner}</td></tr>`);
+            $("#configTitle").html("Persons");
+            $("#configTableHead").append(`<tr><th>Name</th><th>Initial</th><th>Partner</th></tr>`);
+            Database.person.forEach( function( thisItem ){
+                $("#configTableBody").append(`<tr data-confkey="${thisItem.id}"><td>${thisItem.name}</td><td>${thisItem.initial}</td><td>${thisItem.partner}</td></tr>`);
             });
         }
         if( listType == "domain" ){
-            $("#configTable").append(`<tr><th>Name</th></tr>`);
-            Database.supplier.forEach( function( thisItem ){
-                $("$configTable").append(`<tr id="${thisItem.id}"><td>${thisItem.name}</td></tr>`);
+            $("#configTitle").html("Expense Domains");
+            $("#configTableHead").append(`<tr><th>Name</th></tr>`);
+            Database.domain.forEach( function( thisItem ){
+                $("#configTableBody").append(`<tr data-confkey="${thisItem.id}" onclick="showConfigItem(this);"><td>${thisItem.name}</td></tr>`);
             });
         }
 
