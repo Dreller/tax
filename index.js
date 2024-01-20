@@ -34,8 +34,8 @@ DatabaseList();
 
 const CreateWindow = () => {
     const win = new BrowserWindow({
-        width: 800,
-        heitht: 600,
+        width: 1250,
+        height: 1000,
         center: true,
         autoHideMenuBar: false,
         webPreferences: {
@@ -108,6 +108,9 @@ electronIpcMain.handle('engine', async ( event, MyObject ) => {
                 dbfiles: SharedMemory_FileList
             };
         }
+        if( MyObject.method == "DatabaseSaveReceipt" ){
+            var response = await DatabaseSaveReceipt( MyObject );
+        }
         console.log( "Response -> ");
         console.log( response );
         console.groupEnd();
@@ -118,6 +121,11 @@ electronIpcMain.handle('engine', async ( event, MyObject ) => {
         return false;
     }
 });
+
+function DatabaseSaveReceipt( ReqObject ){
+    DBLINK.set( "receipt", JSON.stringify( ReqObject.data ) );
+    return true;
+}
 
 function DatabaseSaveSegment( ReqObject ){
     if( ReqObject.segment == "supplier" ){

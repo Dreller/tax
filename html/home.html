@@ -40,11 +40,17 @@
     </div>
 
 
+    <div id="receiptList" class="container-lg">
+      <table id="receiptTable" class="table table-hover">
+        <thead>
 
-
-
-
-
+        </thead>
+        <tbody>
+          
+        </tbody>
+      </table>
+      
+    </div>
 
 
     <div id="configList" class="container-lg invisible">
@@ -56,6 +62,9 @@
           </tbody>
         </table>
     </div>
+
+
+
 
 <!-- MODAL: Maintain Receipt -->
 <div id="modalReceipt" class="modal" data-bs-backdrop="static">
@@ -261,7 +270,25 @@
     }
 
     function saveReceipt(){
-      console.log("DATE: " + picker.toString('YYYY-MM-DD') );
+      if( currentReceiptId.length > 0 ){
+        Database.receipt = Database.receipt.filter( x => x.id != currentReceiptId );
+      }else{
+        currentReceiptId = crypto.randomUUID();
+      }
+
+      // Build the Receipt Object
+      var myReceipt = {};
+      $("#modalReceipt input,select,textarea").each( function( ndx, thisControl ){
+        var thisMap = $(thisControl).data("map");
+        myReceipt[thisMap] = $(thisControl).val();
+      });
+
+      console.log( "Receipt to save: " );
+      console.dir( myReceipt );
+      // Add receipt to Array
+      Database.receipt.push( myReceipt );
+      ipcRender.invoke( 'engine', { method: "DatabaseSaveReceipt", data: Database.receipt } );
+
     }
 
     function showReceipt( caller ){
@@ -302,6 +329,9 @@
       thisModal.show();
     }
 
+    function receiptList(){
+
+    }
 
     function saveConfigItem(){
       if( currentConfigItem.length > 0 ){

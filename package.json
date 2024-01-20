@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "electron . --trace-warnings",
-    "rebuild": "./node_modules/.bin/electron-rebuild"
+    "rebuild": "./node_modules/.bin/electron-rebuild",
+    "refresh": "npm update"
   },
   "author": "Dreller",
   "license": "ISC",
