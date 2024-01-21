@@ -28,7 +28,7 @@ for( const key of urlParams.keys()){
 }
 
 function GetAppData( Options = {} ){
-    ipcRender.invoke( 'engine', { method: "GetAppContext" })
+    Controller.Call( 'engine', { method: "GetAppContext" })
     .then( (response) => {
       AppData = {...response, 
         param: localParams

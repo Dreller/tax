@@ -31,7 +31,7 @@
         // Load Actual DB in Memory
         var FileName = (urlParams.get("file")).split(".")[0];
         console.log( "FileName=" + FileName );
-        ipcRender.invoke( 'engine', { method: "DatabaseLoad", file: FileName } )
+        Controller.Call( 'engine', { method: "DatabaseLoad", file: FileName } )
         .then( (response) => {
             if( typeof response == "boolean" && response == true ){
                 window.location.replace('home.html' );

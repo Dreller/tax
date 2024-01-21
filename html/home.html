@@ -8,9 +8,12 @@
     <script src="../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="../js/core.js"></script>
     <script src="../node_modules/pikaday/pikaday.js"></script>
+    <script src="../node_modules/datatables.net/js/jquery.dataTables.min.js"></script>
+    <script src="../node_modules/datatables.net-bs5/js/dataTables.bootstrap5.min.js"></script>
     <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="../node_modules/bootstrap-icons/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="../node_modules/pikaday/css/pikaday.css">
+    <link rel="stylesheet" href="../node_modules/datatables.net-bs5/css/dataTables.bootstrap5.min.css">
     <script>
       
     </script>
@@ -39,17 +42,16 @@
         </div>
     </div>
 
+    <button type="button" onclick="test()">TEST</button>
 
     <div id="receiptList" class="container-lg">
       <table id="receiptTable" class="table table-hover">
-        <thead>
-
-        </thead>
-        <tbody>
-          
-        </tbody>
       </table>
-      
+    </div>
+
+    <div id="configList" class="container-lg invisible">
+      <table id="configList" class="table table-hover">
+      </table>
     </div>
 
 
@@ -230,6 +232,13 @@
     var currentReceiptId = "";
     var picker;
 
+    var dt_receipt;
+
+
+    function test(){
+      Controller.Transmit( 'engine', { method: "test", data: {} } );
+    }
+
     function backHome(){
       $("#AppSubtitle").removeClass("display-6");
       $("#AppSubtitle").html(`<button type="button" class="btn btn-primary" onclick="showReceipt(this);" data-reckey="">Add a Receipt</button>`);
@@ -287,7 +296,7 @@
       console.dir( myReceipt );
       // Add receipt to Array
       Database.receipt.push( myReceipt );
-      ipcRender.invoke( 'engine', { method: "DatabaseSaveReceipt", data: Database.receipt } );
+      Controller.Call( 'engine', { method: "DatabaseSaveReceipt", data: Database.receipt } );
 
     }
 
@@ -351,7 +360,7 @@
     // Add Object to the local dataset
       Database[currentConfigType].push( newObject );
     // Send data to Database
-      ipcRender.invoke( 'engine', { method: "DatabaseSaveSegment", segment: currentConfigType, data: Database[currentConfigType] } );
+      Controller.Transmit( 'engine', { method: "DatabaseSaveSegment", segment: currentConfigType, data: Database[currentConfigType] } );
     // Rebuild the list
       showConfigList( currentConfigType );
     // Clear current Item
@@ -438,20 +447,47 @@
         //$("#AppBreadcrumb").html( DrawBreadcrumb([]) );
 
         // Retrieve the Database content
-        ipcRender.invoke( 'engine', { method: "GetDatabase" } )
+        Controller.Call( 'engine', { method: "GetDatabase" } )
         .then( (response) => {
             Database = response;
-            $("#TaxYearTitle").html("Tax Year " + Database.info.year );
+            $("#TaxYearTitle").html("Tax Year " + Database.meta.year );
 
             // https://www.npmjs.com/package/pikaday
             picker = new Pikaday({
               field: document.getElementById('receiptDate'),
-              minDate: new Date(Database.info.year + "-01-01"),
-              maxDate: new Date(Database.info.year + "-12-31")
+              minDate: new Date(Database.meta.year + "-01-01"),
+              maxDate: new Date(Database.meta.year + "-12-31")
             });
+
+            dt_receipt = DTable.Receipts();
 
         });
 
       });
+
+      const DTable = {
+        Receipts: function(){
+          return $("#receiptTable").DataTable( {
+            data: Database.receipt,
+            columns: [
+              { name: "date", data: "date", type: "date", title: "Date" },
+              { name: "pName", data: null, title: "Person", render: function( data, type, row){ return data["person"] != "" ? Database.person.find( x => x.id == data["person"] ).name : "" } },
+              { name: "dName", data: null, title: "Domain", render: function( data, type, row){ return data["domain"] != "" ? Database.domain.find( x => x.id == data["domain"] ).name : "" } },
+              { name: "sName", data: null, title: "Supplier", render: function( data, type, row){ return data["supplier"] != "" ? Database.supplier.find( x => x.id == data["supplier"] ).name : "" } },
+              { name: "amount", data: "amount", title: "Amount"},
+              { name: "refund", data: "refund", title: "Refund" },
+              { name: "net", data: "paid", title: "Net Amount" }
+            ],
+            columnDefs: [
+              { targets: [-1, -2, -3], className: "text-right", type: "num-fmt", render: DataTable.render.number( null, null, 2, "$" ) }
+            ]
+          } );
+        }
+
+
+
+
+
+      }
   </script>
 </html>
