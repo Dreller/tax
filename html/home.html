@@ -24,6 +24,7 @@
         <div class="col lead" id="AppTitle" style="font-weight: 500;">{AppName}</div>
         <div class="col lead text-end" id="TaxYearTitle">{TaxYearTitle}</div>
     </div>
+    <!--
     <div class="row mb-3 pb-3">
         <div class="col-10 display-6" id="AppSubtitle"></div>
         <div class="col-2 text-end" id="AppMenu">
@@ -41,6 +42,21 @@
               </div>
         </div>
     </div>
+    -->
+    <ul class="nav nav-tabs" id="homeTabs">
+      <li class="nav-item">
+        <button type="button" class="nav-link active" aria-current="page">Receipts</button>
+      </li>
+      <li class="nav-item">
+        <button type="button" class="nav-link">Suppliers</a>
+      </li>
+      <li class="nav-item">
+        <button type="button" class="nav-link">Domains</a>
+      </li>
+      <li class="nav-item">
+        <button type="button" class="nav-link">Persons</a>
+      </li>
+    </ul>
 
     <button type="button" onclick="test()">TEST</button>
 
@@ -444,7 +460,15 @@
       $(document).ready(function(){
         GetAppData();
         backHome();
-        //$("#AppBreadcrumb").html( DrawBreadcrumb([]) );
+
+      // Install Event Listeners
+        // Tabs
+        $("#homeTabs > li > button").forEach( function( element ) {
+          element.onclick = function(){
+             $("#homeTabs li button").removeClass("active");
+          }
+          $(`#${element.id}`).addClass("active");
+        });
 
         // Retrieve the Database content
         Controller.Call( 'engine', { method: "GetDatabase" } )
