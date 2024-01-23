@@ -24,54 +24,35 @@
         <div class="col lead" id="AppTitle" style="font-weight: 500;">{AppName}</div>
         <div class="col lead text-end" id="TaxYearTitle">{TaxYearTitle}</div>
     </div>
-    <!--
-    <div class="row mb-3 pb-3">
-        <div class="col-10 display-6" id="AppSubtitle"></div>
-        <div class="col-2 text-end" id="AppMenu">
-            <div class="dropdown">
-                <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                  Main Menu
-                </button>
-                <ul class="dropdown-menu">
-                  <li><a class="dropdown-item" href="#" onclick="backHome();">Home</a></li>
-                  <li><hr class="dropdown-divider"></li>
-                  <li><a class="dropdown-item" href="#" onclick="showConfigList('supplier');">Suppliers</a></li>
-                  <li><a class="dropdown-item" href="#" onclick="showConfigList('person')">Persons</a></li>
-                  <li><a class="dropdown-item" href="#" onclick="showConfigList('domain')">Domains</a></li>
-                </ul>
-              </div>
-        </div>
-    </div>
-    -->
+
     <ul class="nav nav-tabs" id="homeTabs">
       <li class="nav-item">
-        <button type="button" class="nav-link active" aria-current="page">Receipts</button>
+        <button type="button" class="nav-link active" aria-current="page" data-list="receipt">Receipts</button>
       </li>
       <li class="nav-item">
-        <button type="button" class="nav-link">Suppliers</a>
+        <button type="button" class="nav-link" data-list="config" data-config="supplier">Suppliers</a>
       </li>
       <li class="nav-item">
-        <button type="button" class="nav-link">Domains</a>
+        <button type="button" class="nav-link" data-list="config" data-config="domain">Domains</a>
       </li>
       <li class="nav-item">
-        <button type="button" class="nav-link">Persons</a>
+        <button type="button" class="nav-link" data-list="config" data-config="person">Persons</a>
       </li>
     </ul>
 
-    <button type="button" onclick="test()">TEST</button>
 
     <div id="receiptList" class="container-lg">
-      <table id="receiptTable" class="table table-hover">
+      <table id="receiptTable" data-list="receipt" class="table table-hover">
       </table>
     </div>
 
-    <div id="configList" class="container-lg invisible">
-      <table id="configList" class="table table-hover">
+    <div id="configList" class="container-lg" style="display:none;">
+      <table id="configTable" data-list="config" class="table table-hover">
       </table>
     </div>
 
-
-    <div id="configList" class="container-lg invisible">
+<!--
+    <div id="configListX" class="container-lg invisible">
         <button id="configAddNew" type="button" class="btn btn-primary" data-confkey="" onclick="showConfigItem(this);">Add New</button>
         <table id="configTable" class="table table-hover">
           <thead id="configTableHead">
@@ -80,7 +61,7 @@
           </tbody>
         </table>
     </div>
-
+  -->
 
 
 
@@ -260,7 +241,7 @@
       $("#AppSubtitle").html(`<button type="button" class="btn btn-primary" onclick="showReceipt(this);" data-reckey="">Add a Receipt</button>`);
       currentConfigItem = "";
       currentConfigType = "";
-      $("#configList").addClass("invisible");
+      $("#configList").hide();
     }
 
     function receiptSupplierInfo(){
@@ -463,11 +444,21 @@
 
       // Install Event Listeners
         // Tabs
-        $("#homeTabs > li > button").forEach( function( element ) {
-          element.onclick = function(){
-             $("#homeTabs li button").removeClass("active");
+        $("#homeTabs > li > button").on("click", function(){
+          $("#homeTabs > li > button").removeClass("active");
+          $(this).addClass("active");
+          switch( $(this).data("list") ){
+            case "receipt":
+              $("#receiptList").show();
+              $("#configList").hide();
+              Table_Receipt_Build();
+              break;
+            case "config":
+              $("#receiptList").hide();
+              $("#configList").show();
+              Table_Config_Build($(this).data("config"));
+              break;
           }
-          $(`#${element.id}`).addClass("active");
         });
 
         // Retrieve the Database content
@@ -483,15 +474,20 @@
               maxDate: new Date(Database.meta.year + "-12-31")
             });
 
-            dt_receipt = DTable.Receipts();
+            Table_Receipt_Build();
 
         });
 
       });
 
-      const DTable = {
-        Receipts: function(){
-          return $("#receiptTable").DataTable( {
+      function Table_Receipt_Build(){
+        if( window["tableReceipt"] !== undefined ){
+          console.log("DataTable already exists - Destroying...");
+          window["tableReceipt"].destroy();
+          $("#receiptTable").empty();
+        }
+        window["tableReceipt"] = $("#receiptTable")
+        .DataTable( {
             data: Database.receipt,
             columns: [
               { name: "date", data: "date", type: "date", title: "Date" },
@@ -506,12 +502,65 @@
               { targets: [-1, -2, -3], className: "text-right", type: "num-fmt", render: DataTable.render.number( null, null, 2, "$" ) }
             ]
           } );
-        }
-
-
-
-
-
       }
+      function Table_Receipt_Update(){
+        tableReceipt.draw();
+      }
+      function Table_Config_Build( configType ){
+        switch( configType ){
+          case "domain":
+            var colDefn = [
+              {
+                name: "name", data: "name", title: "Domain Name"
+              }
+            ];
+            var dataSrc = Database.domain;
+            break;
+          case "person":
+          var colDefn = [
+              {
+                name: "name", data: "name", title: "Person Name"
+              },
+              {
+                name: "initial", data: "initial", title: "Initials"
+              },
+              {
+                name: "pName", data: null, title: "Partner", render: function( data, type, row){ return data["partner"] != "" ? Database.person.find( x => x.id == data["partner"] ).name : "" }
+              }
+            ];
+            var dataSrc = Database.person;
+            break;
+          case "supplier":
+          var colDefn = [
+              {
+                name: "name", data: "name", title: "Supplier Name"
+              },
+              {
+                name: "address", data: "address", title: "Address"
+              },
+              {
+                name: "poc", data: null, title: "Contact", render: function( d,t,r ){return d["contact"] == "" ? "" + d["phone"] : d["contact"] }
+              },
+              {
+                name: "dName", data: null, title: "Expense Domain", render: function( data, type, row){ return data["domain"] != "" ? Database.domain.find( x => x.id == data["domain"] ).name : "" }
+              }
+            ];
+            var dataSrc = Database.supplier;
+            break;
+        }
+        if( window["tableConfig"] !== undefined ){
+          console.log("DataTable already exists - Destroying...");
+          window["tableConfig"].destroy();
+          $("#configTable").empty();
+        }
+        console.log( "Building DataTable for: " + configType);
+        console.log( colDefn );
+        window["tableConfig"] = $("#configTable")
+        .DataTable( {
+            data: dataSrc,
+            columns: colDefn
+          } );
+      }
+
   </script>
 </html>
