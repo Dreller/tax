@@ -496,10 +496,19 @@
               { name: "sName", data: null, title: "Supplier", render: function( data, type, row){ return data["supplier"] != "" ? Database.supplier.find( x => x.id == data["supplier"] ).name : "" } },
               { name: "amount", data: "amount", title: "Amount"},
               { name: "refund", data: "refund", title: "Refund" },
-              { name: "net", data: "paid", title: "Net Amount" }
+              { name: "net", data: "paid", title: "Net Amount" },
+              {name: "test", data: null, title: "", orderable: false, searchable:false, render: function(d,t,r){return `<button type="button" class="btn btn-primary">Edit</button>`}}
             ],
             columnDefs: [
               { targets: [-1, -2, -3], className: "text-right", type: "num-fmt", render: DataTable.render.number( null, null, 2, "$" ) }
+            ],
+            buttons: [
+              {
+                text: "Add New",
+                action: function(){
+                  alert("Add New Receipt");
+                }
+              }
             ]
           } );
       }
