@@ -10,6 +10,7 @@
     <script src="../node_modules/pikaday/pikaday.js"></script>
     <script src="../node_modules/datatables.net/js/jquery.dataTables.min.js"></script>
     <script src="../node_modules/datatables.net-bs5/js/dataTables.bootstrap5.min.js"></script>
+    <script src="../node_modules/datatables.net-buttons/js/dataTables.buttons.min.js"></script>
     <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="../node_modules/bootstrap-icons/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="../node_modules/pikaday/css/pikaday.css">
@@ -40,6 +41,9 @@
       </li>
     </ul>
 
+    <div class="mt-3 d-grid gap-2 d-md-block">
+      <button type="button" class="btn btn-outline-primary btn-sm" onclick="AddNew()">Add New</button>
+    </div>
 
     <div id="receiptList" class="container-lg">
       <table id="receiptTable" data-list="receipt" class="table table-hover">
@@ -231,6 +235,11 @@
 
     var dt_receipt;
 
+    function AddNew(){
+      var ThisObjectType = $("#homeTabs button.nav-link.active").first().data("list");
+      console.log( "Adding a new: " + ThisObjectType );
+      Controller.Call( 'window-manager' , { method: "open", page: "form_receipt.html", arguments: "action:add, id:0" } );
+    }
 
     function test(){
       Controller.Transmit( 'engine', { method: "test", data: {} } );
@@ -489,6 +498,13 @@
         window["tableReceipt"] = $("#receiptTable")
         .DataTable( {
             data: Database.receipt,
+            lengthChange: false,
+            paging: false,
+            language: {
+              info: "Showing _TOTAL_ entries.",
+              infoEmpty: "This table is empty.",
+              infoFiltered: "  Filtered from _MAX_ records."
+            },
             columns: [
               { name: "date", data: "date", type: "date", title: "Date" },
               { name: "pName", data: null, title: "Person", render: function( data, type, row){ return data["person"] != "" ? Database.person.find( x => x.id == data["person"] ).name : "" } },
@@ -497,21 +513,14 @@
               { name: "amount", data: "amount", title: "Amount"},
               { name: "refund", data: "refund", title: "Refund" },
               { name: "net", data: "paid", title: "Net Amount" },
-              {name: "test", data: null, title: "", orderable: false, searchable:false, render: function(d,t,r){return `<button type="button" class="btn btn-primary">Edit</button>`}}
+              { name: "test", data: null, title: "", orderable: false, searchable:false, render: function(d,t,r){return `<button type="button" class="btn btn-primary">Edit</button>`}}
             ],
             columnDefs: [
-              { targets: [-1, -2, -3], className: "text-right", type: "num-fmt", render: DataTable.render.number( null, null, 2, "$" ) }
-            ],
-            buttons: [
-              {
-                text: "Add New",
-                action: function(){
-                  alert("Add New Receipt");
-                }
-              }
+              { targets: [-2, -3, -4], className: "text-right", type: "num-fmt", render: DataTable.render.number( null, null, 2, "$" ) }
             ]
           } );
       }
+
       function Table_Receipt_Update(){
         tableReceipt.draw();
       }
@@ -567,7 +576,15 @@
         window["tableConfig"] = $("#configTable")
         .DataTable( {
             data: dataSrc,
-            columns: colDefn
+            lengthChange: false,
+            paging: false,
+            language: {
+              info: "Showing _TOTAL_ entries.",
+              infoEmpty: "This table is empty.",
+              infoFiltered: "  Filtered from _MAX_ records."
+            },
+            columns: colDefn,
+            buttons: ['pdf']
           } );
       }
 

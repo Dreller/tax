@@ -4,72 +4,76 @@
     const crypto = require('crypto');
     const jm = require('json-db-memory');
     const fs = require('fs');
+    const url = require('url');
     const { default: JsonDataStore } = require('json-db-memory');
+const { constants } = require('node:fs/promises');
+
+console.log( process.env );
 
 // Initialize Variables at the Main Level
     var _Debug = true;
     var _SourceFilesList;
     var _Database = {};
     var _JsonMemory;
+    var _MainWin;
+    var _SubWin;
 
-// Debug Function for Tracing in the Process Console
-function _LOG(sText = "", oData = null){
-    if( _Debug ){
-        console.log( sText );
-        if( oData !== null ){
-            var ObjectType = typeof oData;
-            console.log( "oData is a: " + ObjectType );
-            switch( ObjectType ){
-                case "array":
-                    console.dir( oData );
-                    break;
-                case "object":
-                    console.log( oData );
-                    break;
-                default:
-                    console.log( "Unhandled Object Type: " + ObjectType );
-                    console.log( oData );
-            }
+// App-level Triggers
+app.whenReady().then(() => {
+    OpenMainWindow();
+    app.on('activate', () => {
+        if( BrowserWindow.getAllWindows().length === 0 ) Window_Main();
+    } )
+});
+app.on('window-all-closed', () => {
+    if( process.platform !== 'darwin' ) app.quit();
+});
+
+// Main Window
+function OpenMainWindow(){
+    _MainWin = new BrowserWindow({
+        width: 1250,
+        height: 600,
+        center: true,
+        autoHideMenuBar: false,
+        webPreferences: {
+            preload: path.join( __dirname  + '/preload.js' ),
+            nodeIntegration: true,
+            contextIsolation: true
         }
-        
+    });
+    _MainWin.loadFile('./html/welcome.html');
+    if( _Debug ){
+        _MainWin.webContents.openDevTools();
     }
 }
 
-// Start the Instance
-    _LOG( "New TAX Instance", process.env );
+// Child Window
+function ChildWindow( sTargetPage, sArguments = "" ){
+    _SubWin = new BrowserWindow({
+         parent: _MainWin,
+        modal: true,
+        width: 800,
+        height: 600,
+        center: true,
+        autoHideMenuBar: false,
+        webPreferences: {
+            preload: path.join( __dirname  + '/preload.js' )
+        }
+    });
 
-
-// Main Window
-    const Window_Main = () => {
-        const win = new BrowserWindow({
-            width: 1250,
-            height: 1000,
-            center: true,
-            autoHideMenuBar: false,
-            webPreferences: {
-                preload: path.join( __dirname  + '/preload.js' ),
-                nodeIntegration: true,
-                contextIsolation: true
-            }
-        });
-        
-        win.loadFile('./html/welcome.html');
-        win.webContents.openDevTools();
+    _SubWin.loadFile( './html/' + sTargetPage );
+    _SubWin.once('ready-to-show', () => {
+        _SubWin.show()
+    });
+    if( _Debug ){
+        _SubWin.webContents.openDevTools();
     }
-
-    app.whenReady().then(() => {
-        Window_Main();
-
-        app.on('activate', () => {
-            if( BrowserWindow.getAllWindows().length === 0 ) Window_Main();
-        } )
+    _SubWin.on('closed', () => {
+        // Dereference the window object to free up memory
+        _SubWin = null;
     });
-
-    app.on('window-all-closed', () => {
-        if( process.platform !== 'darwin' ) app.quit();
-    });
-
-
+}
 
 // Database Manipulation Methods
 const DB = {
@@ -168,53 +172,35 @@ DB.GetFiles();
 
 
 
-/**
- * Main Processing Engine.  Pass the appropriate MyObject.
- * 
- * - DATABASE
- *   - Create New Database:
- *      Request:
- *          {
- *              method: 'DatabaseCreate',
- *              year: 2024
- *          }
- *   - Load an Existing Database:
- *      Request:
- *          {
- *              method: 'DatabaseLoad',
- *              file: 'filename-without-ext'
- *          }
- *   - Save a segment in the Database:
- *      Request: 
-            {
-                method: 'DatabaseSaveSegment',
-                segment: supplier|domain|person,
-                data: {}
-            }
- * 
- */
-ipcMain.handle('engine', async ( event, MyObject ) => {
-    console.group("Invoke 'index.js'");
-    console.log( MyObject );
-    if( MyObject.constructor === Object ){
-        if( MyObject.method == "test"){
-           
-                const win2 = new BrowserWindow({
-                    width: 1250,
-                    height: 1000,
-                    center: true,
-                    autoHideMenuBar: false,
-                    webPreferences: {
-                        preload: path.join( __dirname  + '/preload.js' ),
-                        nodeIntegration: true,
-                        contextIsolation: true
-                    }
-                });
-                
-                win2.loadFile('./html/form_receipt.html');
-                //win2.webContents.openDevTools();
-                var response = true;
+
+ ipcMain.handle( 'window-manager', async( event, MyObject ) => {
+    var WindowAction = MyObject.method.toLowerCase();
+    var WindowActionList = [
+        "open",
+        "close"
+    ];
+    if( WindowActionList.includes( WindowAction) ){
+        switch( WindowAction ){
+            case "open":
+                _LOG( "Open the Page: " + MyObject.page + ", Arguments: " + MyObject.arguments );
+                ChildWindow( MyObject.page, MyObject.arguments );
+                break;
+            case "close":
+                _LOG( "Close the Child Window" );
+                _SubWin.hide();
+                break;
         }
+    }else{
+        console.error( `Called IPC Channel 'window-manager' with an unknown action (${WindowAction})` );
+    }
+ } );
+
+ipcMain.handle('engine', async ( event, MyObject ) => {
+    //console.group("Invoke 'index.js'");
+    console.log( "Call to 'engine'...");
+    console.log( MyObject );
+    var response = true;
+    if( MyObject.constructor === Object ){
         if( MyObject.method == "DatabaseCreate" ){ 
             var response = await DB.CreateFile( MyObject );
         }
@@ -238,11 +224,11 @@ ipcMain.handle('engine', async ( event, MyObject ) => {
         }
         console.log( "Response -> ");
         console.log( response );
-        console.groupEnd();
+        //console.groupEnd();
         return response;
     }else{
         console.log( 'ERROR - MyObject is not an Object!' );
-        console.groupEnd();
+        //console.groupEnd();
         return false;
     }
 });
@@ -269,4 +255,27 @@ function DatabaseSaveSegment( ReqObject ){
         return true;
     }
     return false;
+}
+
+// Debug Function for Tracing in the Process Console
+function _LOG(sText = "", oData = null){
+    if( _Debug ){
+        console.log( sText );
+        if( oData !== null ){
+            var ObjectType = typeof oData;
+            console.log( "oData is a: " + ObjectType );
+            switch( ObjectType ){
+                case "array":
+                    console.dir( oData );
+                    break;
+                case "object":
+                    console.log( oData );
+                    break;
+                default:
+                    console.log( "Unhandled Object Type: " + ObjectType );
+                    console.log( oData );
+            }
+        }
+        
+    }
 }

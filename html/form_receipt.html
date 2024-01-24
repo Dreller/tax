@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
   <head>
@@ -8,16 +9,25 @@
     <script src="../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="../js/core.js"></script>
     <script src="../node_modules/pikaday/pikaday.js"></script>
+    <script src="../node_modules/datatables.net/js/jquery.dataTables.min.js"></script>
+    <script src="../node_modules/datatables.net-bs5/js/dataTables.bootstrap5.min.js"></script>
+    <script src="../node_modules/datatables.net-buttons/js/dataTables.buttons.min.js"></script>
     <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="../node_modules/bootstrap-icons/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="../node_modules/pikaday/css/pikaday.css">
+    <link rel="stylesheet" href="../node_modules/datatables.net-bs5/css/dataTables.bootstrap5.min.css">
     <script>
       
     </script>
     <title>{AppName}</title>
   </head>
   <body class="container-lg">
+  <h1>RECEIPT FORM</h1>
+<button class="btn btn-danger" type="button" onclick="CloseWin();">close</button>
 
-  </body>
-  RECEIPT FORM
-  </html>  
+<script>
+  function CloseWin(){
+    Controller.Call( 'window-manager', { method: "close" } );
+  }
+</script>
+</body> </html>
