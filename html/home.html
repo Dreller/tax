@@ -55,80 +55,8 @@
       </table>
     </div>
 
-<!--
-    <div id="configListX" class="container-lg invisible">
-        <button id="configAddNew" type="button" class="btn btn-primary" data-confkey="" onclick="showConfigItem(this);">Add New</button>
-        <table id="configTable" class="table table-hover">
-          <thead id="configTableHead">
-          </thead>
-          <tbody id="configTableBody">
-          </tbody>
-        </table>
-    </div>
-  -->
 
 
-
-<!-- MODAL: Maintain Receipt -->
-<div id="modalReceipt" class="modal" data-bs-backdrop="static">
-  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Tax Receipt</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <div class="row g-2">
-          <div class="col-4 mb-3">
-            <label for="receiptPerson" class="form-label">Person</label>
-            <select class="form-select" id="receiptPerson" aria-label="Person" data-map="person" data-source="person"></select>
-          </div>
-          <div class="col-4 mb-3">
-            <label for="receiptDomain" class="form-label">Expense Domain</label>
-            <select class="form-select" id="receiptDomain" aria-label="Domain" data-map="domain" data-source="domain"></select>
-          </div>
-          <div class="col-4 mb-3">
-            <label for="receiptDate" class="form-label">Receipt Date</label>
-            <input type="text" class="form-control" id="receiptDate" placeholder="" data-map="date">
-          </div>
-        </div>
-        <div class="row g-2">
-          <div class="col-4 mb-3">
-            <label for="receiptSupplier" class="form-label">Supplier</label>
-            <select class="form-select" id="receiptSupplier" aria-label="Supplier" data-map="supplier" data-source="supplier" onchange="receiptSupplierInfo();"></select>
-          </div>
-          <div class="col-8 mb-3" id="receiptSupplierInfo">
-
-          </div>
-        </div>
-        <div class="row g-2">
-          <div class="col-8 mb-3">
-            <label for="receiptComment">Comment</label>
-            <textarea class="form-control" placeholder="" id="receiptComment" style="height: 180px" data-map="comment"></textarea>
-          </div>
-
-          <div class="col-4 mb-3 text-end">
-
-            <label for="receiptAmount" class="form-label text-end">Full Amount</label>
-            <input type="number" min="0" max="999999" step="0.01" class="form-control text-end" id="receiptAmount" data-map="amount" onchange="receiptCalculate();">
-
-            <label for="receiptRefund" class="form-label text-end">Insured Amount</label>
-            <input type="number" min="0" max="999999" step="0.01" class="form-control text-end" id="receiptRefund" data-map="refund" onchange="receiptCalculate();">
-
-            <label for="receiptPaid" class="form-label text-end">Paid Amount</label>
-            <input type="number" step="0.01" class="form-control-plaintext text-end" style="font-weight:bold;" id="receiptPaid" data-map="paid" readonly>
-
-          </div>
-        </div>
-      
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="saveReceipt();">Save</button>
-      </div>
-    </div>
-  </div>
-</div> <!-- /MODAL: Maintain Receipt -->
 <!-- MODAL: Maintain Domain -->
 <div id="configModalDomain" class="modal" data-bs-backdrop="static">
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
@@ -238,7 +166,7 @@
     function AddNew(){
       var ThisObjectType = $("#homeTabs button.nav-link.active").first().data("list");
       console.log( "Adding a new: " + ThisObjectType );
-      Controller.Call( 'window-manager' , { method: "open", page: "form_receipt.html", arguments: "action:add, id:0" } );
+      Controller.Call( 'window-manager' , { method: "open", page: "form_receipt.html", action: "add", id: "0" } );
     }
 
     function test(){

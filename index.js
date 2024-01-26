@@ -6,7 +6,7 @@
     const fs = require('fs');
     const url = require('url');
     const { default: JsonDataStore } = require('json-db-memory');
-const { constants } = require('node:fs/promises');
+    const { constants } = require('node:fs/promises');
 
 console.log( process.env );
 
@@ -17,6 +17,7 @@ console.log( process.env );
     var _JsonMemory;
     var _MainWin;
     var _SubWin;
+    var _SubWinData;
 
 // App-level Triggers
 app.whenReady().then(() => {
@@ -49,7 +50,10 @@ function OpenMainWindow(){
 }
 
 // Child Window
-function ChildWindow( sTargetPage, sArguments = "" ){
+function ChildWindow( sTargetPage, oArgs = {} ){
+    _SubWinData = oArgs;
+    console.log( "Capturing data for the SubWindow:" );
+    console.log( oArgs );
     _SubWin = new BrowserWindow({
          parent: _MainWin,
         modal: true,
@@ -63,12 +67,11 @@ function ChildWindow( sTargetPage, sArguments = "" ){
     });
 
     _SubWin.loadFile( './html/' + sTargetPage );
+    _SubWin["tax"] = _SubWinData;
     _SubWin.once('ready-to-show', () => {
         _SubWin.show()
     });
-    if( _Debug ){
-        _SubWin.webContents.openDevTools();
-    }
+
     _SubWin.on('closed', () => {
         // Dereference the window object to free up memory
         _SubWin = null;
@@ -177,17 +180,22 @@ DB.GetFiles();
     var WindowAction = MyObject.method.toLowerCase();
     var WindowActionList = [
         "open",
-        "close"
+        "close",
+        "get-data"
     ];
     if( WindowActionList.includes( WindowAction) ){
         switch( WindowAction ){
             case "open":
                 _LOG( "Open the Page: " + MyObject.page + ", Arguments: " + MyObject.arguments );
-                ChildWindow( MyObject.page, MyObject.arguments );
+                ChildWindow( MyObject.page, MyObject );
                 break;
             case "close":
                 _LOG( "Close the Child Window" );
                 _SubWin.hide();
+                break;
+            case "get-data":
+                return _SubWinData;
+                _SubWinData = {};
                 break;
         }
     }else{
