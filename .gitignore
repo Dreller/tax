@@ -1,5 +1,6 @@
 # Custom to this project
-*.jtax
+
+
 
 # Sources:
 # - https://github.com/github/gitignore/blob/main/Node.gitignore
@@ -36,3 +37,6 @@ jspm_packages/
 
 # Stores VSCode versions used for testing VSCode extensions
 .vscode-test
+
+# Other
+package-lock.json

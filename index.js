@@ -1,5 +1,5 @@
 // Load Packages
-    const { app, BrowserWindow, ipcMain } = require('electron');
+    const { app, BrowserWindow, ipcMain, dialog } = require('electron');
     const path = require('node:path');
     const crypto = require('crypto');
     const jm = require('json-db-memory');
@@ -15,6 +15,8 @@ console.log( process.env );
     var _SourceFilesList;
     var _Database = {};
     var _JsonMemory;
+    var _JsonMemoryFile = "";
+    var _JsonMemoryFilePath = "";
     var _MainWin;
     var _SubWin;
     var _SubWinData;
@@ -106,6 +108,7 @@ const DB = {
                 _JsonMemory.set( 'person', '[]' );
                 _JsonMemory.set( 'domain', '[]' );
                 _JsonMemory.set( 'receipt', '[]' );
+                _JsonMemory.set( 'category', '[]' );
             }
         }else{
             console.error( "XXXXX -> Error in DB.CreateFile <- XXXXX" );
@@ -120,14 +123,18 @@ const DB = {
         _JsonMemory.set( 'person', '[]' );
         _JsonMemory.set( 'domain', '[]' );
         _JsonMemory.set( 'receipt', '[]' );
+        _JsonMemory.set( 'category', '[]' );
     },
     LoadFile: function( sFile = "" ){
         _LOG( "> Load a Database ", {file: sFile} );
+        _JsonMemoryFile = sFile;
+        _JsonMemoryFilePath = './node_modules/json-db-memory/data/' + sFile + ".json";
         _JsonMemory = new JsonDataStore( sFile );
         console.log( _JsonMemory );
         _Database = {
             meta: JSON.parse( _JsonMemory.get( "meta" ) ),
             domain: JSON.parse( _JsonMemory.get( "domain" ) ),
+            category: JSON.parse( _JsonMemory.get( "category" ) ),
             person: JSON.parse( _JsonMemory.get( "person" ) ),
             supplier: JSON.parse( _JsonMemory.get( "supplier" ) ),
             receipt: JSON.parse( _JsonMemory.get( "receipt" ) )
@@ -139,14 +146,43 @@ const DB = {
     },
     Insert: function( sTable = "", oData = {} ){
         _Database[ sTable.toLowerCase() ].push( oData );
-        _JsonMemory.set( sTable.toLowerCase(), _Database[ sTable.toLowerCase() ] );
+        _JsonMemory.set( sTable.toLowerCase(), JSON.stringify( _Database[ sTable.toLowerCase() ] ) );
         return true;
     },
     Update: function( sTable = "", oData = {} ){
         _Database[ sTable.toLowerCase() ] = _Database[ sTable.toLowerCase() ].filter( x => x.id != oData.id );
         _Database[ sTable.toLowerCase() ].push( oData );
-        _JsonMemory.set( sTable.toLowerCase(), _Database[ sTable.toLowerCase() ] );
+        _JsonMemory.set( sTable.toLowerCase(), JSON.stringify( _Database[ sTable.toLowerCase() ] ) );
         return true;
+    },
+    Export: function(){
+        dialog.showOpenDialog( _MainWin, {
+            properties: ["openDirectory"],
+            title: "Export Location",
+            buttonLabel: "Export here"
+        } ).then( result => {
+            if( result.canceled == false ){
+
+                var myDate = new Date();
+                var myYear = myDate.getFullYear();
+                var myMonth = ( myDate.getMonth() + 1 ).toString().padStart( 2, '0' );
+                var myDay = myDate.getDate().toString().padStart( 2, '0' );
+                var myHour = myDate.getHours().toString().padStart(2, '0' );
+                var myMinute = myDate.getMinutes().toString().padStart(2, '0' );
+                var mySecond = myDate.getSeconds().toString().padStart(2, '0' );
+                var myFileName = `Tax Data - Year ${_JsonMemoryFile} - ${myYear}${myMonth}${myDay}-${myHour}${myMinute}${mySecond}.json`;
+                var myFileDest = result.filePaths[0] + "/" + myFileName;
+                _LOG( "Export File: " + _JsonMemoryFilePath );
+                _LOG( " ... to: " + myFileDest );
+                fs.copyFileSync( _JsonMemoryFilePath, myFileDest);
+                dialog.showMessageBox( _MainWin, {
+                    message: "Export successfully completed.",
+                    type: "info",
+                    detail: "The file has been exported to: " + myFileDest
+                } );
+
+            }
+        })
     }
 }
 
@@ -186,11 +222,9 @@ DB.GetFiles();
     if( WindowActionList.includes( WindowAction) ){
         switch( WindowAction ){
             case "open":
-                _LOG( "Open the Page: " + MyObject.page + ", Arguments: " + MyObject.arguments );
                 ChildWindow( MyObject.page, MyObject );
                 break;
             case "close":
-                _LOG( "Close the Child Window" );
                 _SubWin.hide();
                 break;
             case "get-data":
@@ -202,6 +236,37 @@ DB.GetFiles();
         console.error( `Called IPC Channel 'window-manager' with an unknown action (${WindowAction})` );
     }
  } );
+
+ // Data Transactions
+ /** Object:
+  *     {
+  *         key         (str) Action Key
+  *         action      (str) add or edit
+  *         table       (str) Table of data
+  *     }
+  * 
+  */
+ ipcMain.handle( 'data', async( event, MyObject ) => {
+    switch( MyObject.key ){
+        case "get-all":
+            return  await DB.GetObject();
+            break;
+        case "save":
+            if( MyObject.action == "add" ){
+                return DB.Insert( MyObject.table, MyObject.data )
+            }else{
+                return DB.Update( MyObject.table, MyObject.data )
+            }
+            break;
+        case "export":
+            return await DB.Export();
+            break;
+        default: 
+            console.error( `Unhandled call to IPC Channel 'data': ${JSON.stringify(MyObject)}` );
+    }
+
+
+ });
 
 ipcMain.handle('engine', async ( event, MyObject ) => {
     //console.group("Invoke 'index.js'");

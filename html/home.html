@@ -27,22 +27,40 @@
     </div>
 
     <ul class="nav nav-tabs" id="homeTabs">
-      <li class="nav-item">
-        <button type="button" class="nav-link active" aria-current="page" data-list="receipt">Receipts</button>
+      <!-- Menu - 
+            . User can select 'Everybody' to view all Receipts
+            . User can select a Person Name to filter Receipts for that person
+            . User can select 'Configuration' to get in Tables Configuration
+      -->
+      <li class="nav-item dropdown">
+        <a id="navMenuButton" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#!" role="button" aria-expanded="false">Everybody</a>
+        <ul class="dropdown-menu">
+          <li><button type="button" class="dropdown-item" onclick="navPerson('all');">Everybody</button></li>
+          <li><hr class="dropdown-divider"></li>
+          <li><button type="button" class="dropdown-item" onclick="navConfig();">Configuration</button></li>
+          <li><button type="button" class="dropdown-item" onclick="navExport();">Export Data</button></li>
+        </ul>
       </li>
-      <li class="nav-item">
-        <button type="button" class="nav-link" data-list="config" data-config="supplier">Suppliers</a>
-      </li>
-      <li class="nav-item">
-        <button type="button" class="nav-link" data-list="config" data-config="domain">Domains</a>
-      </li>
-      <li class="nav-item">
-        <button type="button" class="nav-link" data-list="config" data-config="person">Persons</a>
-      </li>
+      
+      <!-- These items are shown when user select "Configuration" in the dropdown menu. -->
+        <li class="nav-item">
+          <button type="button" class="nav-link" data-list="config" data-config="supplier" style="display:none;">Suppliers</a>
+        </li>
+        <li class="nav-item">
+          <button type="button" class="nav-link" data-list="config" data-config="domain" style="display:none;">Domains</a>
+        </li>
+        <li class="nav-item">
+          <button type="button" class="nav-link" data-list="config" data-config="category" style="display:none;">Categories</a>
+        </li>
+        <li class="nav-item">
+          <button type="button" class="nav-link" data-list="config" data-config="person" style="display:none;">Persons</a>
+        </li>
+      <!-- End of Configuration Options -->
+
     </ul>
 
     <div class="mt-3 d-grid gap-2 d-md-block">
-      <button type="button" class="btn btn-outline-primary btn-sm" onclick="AddNew()">Add New</button>
+      <button type="button" class="btn btn-outline-primary btn-sm" onclick="navAddItem()">Add New</button>
     </div>
 
     <div id="receiptList" class="container-lg">
@@ -155,7 +173,57 @@
 
   </body>
   <script>
-    var currentConfigItem = "";
+    var TAX = {
+      menu: {
+        mainSection: "home",
+        subSection: ""
+      }
+    };
+
+
+    function navConfig(){
+      TAX.menu = {
+        mainSection: "configuration",
+        subSection: ""
+      }
+
+      $("#navMenuButton").html("Configuration");
+      $(`button.nav-link[data-list='config']`).show();
+    }
+    function navPerson( sPerson ){
+      TAX.menu = {
+        mainSection: "home",
+        subSection: sPerson
+      }
+
+      $(`button.nav-link[data-list='config']`).hide();
+      if( sPerson == "all" ){
+        $("#navMenuButton").html("Everybody");
+      }
+    }
+
+    function navExport(){
+      Controller.Call( 'data', { key: "export" } );
+    }
+
+    function navAddItem(){
+      console.log( "Adding: " + TAX.menu.subSection );
+      Controller.Call( 'window-manager' , { method: "open", page: "form_.html", type: TAX.menu.subSection, action: "add", id: "0" } );
+    }
+
+    function navEditItem( sGuid ){
+      console.log( "Editing: " + TAX.menu.subSection );
+      Controller.Call( 'window-manager' , { method: "open", page: "form_.html", type: TAX.menu.subSection, action: "edit", id: sGuid } );
+    }
+
+
+
+
+
+///////////////////////////////////////////////////////////
+//                    OLD CODE BELOW                     //
+///////////////////////////////////////////////////////////
+var currentConfigItem = "";
     var currentConfigType = "";
 
     var currentReceiptId = "";
@@ -168,6 +236,13 @@
       console.log( "Adding a new: " + ThisObjectType );
       Controller.Call( 'window-manager' , { method: "open", page: "form_receipt.html", action: "add", id: "0" } );
     }
+    function AddNew2(){
+      var ThisObjectType = $("#homeTabs button.nav-link.active").first().data("list");
+      console.log( "Adding a new: " + ThisObjectType );
+      Controller.Call( 'window-manager' , { method: "open", page: "form_.html", type: ThisObjectType, action: "add", id: "0" } );
+    }
+    
+
 
     function test(){
       Controller.Transmit( 'engine', { method: "test", data: {} } );
@@ -372,6 +447,13 @@
                 $("#configTableBody").append(`<tr data-confkey="${thisItem.id}" onclick="showConfigItem(this);"><td>${thisItem.name}</td></tr>`);
             });
         }
+        if( listType == "category" ){
+            $("#AppSubtitle").html("Expense Categories");
+            $("#configTableHead").append(`<tr><th>Domain</th<th>Name</th></tr>`);
+            Database.category.forEach( function( thisItem ){
+                $("#configTableBody").append(`<tr data-confkey="${thisItem.id}" onclick="showConfigItem(this);"><td>${thisItem.domain}</td><td>${thisItem.name}</td></tr>`);
+            });
+        }
 
     }
 
@@ -381,22 +463,29 @@
 
       // Install Event Listeners
         // Tabs
-        $("#homeTabs > li > button").on("click", function(){
-          $("#homeTabs > li > button").removeClass("active");
-          $(this).addClass("active");
-          switch( $(this).data("list") ){
-            case "receipt":
-              $("#receiptList").show();
-              $("#configList").hide();
-              Table_Receipt_Build();
-              break;
-            case "config":
-              $("#receiptList").hide();
-              $("#configList").show();
-              Table_Config_Build($(this).data("config"));
-              break;
-          }
-        });
+          $("#homeTabs > li > button").on("click", function(){
+            $("#homeTabs > li > button").removeClass("active");
+            $(this).addClass("active");
+            switch( $(this).data("list") ){
+              case "receipt":
+                $("#receiptList").show();
+                $("#configList").hide();
+                Table_Receipt_Build();
+                break;
+              case "config":
+                TAX.menu = {
+                  mainSection: "configuration",
+                  subSection: $(this).data("config")
+                }
+                $("#receiptList").hide();
+                $("#configList").show();
+                Table_Config_Build($(this).data("config"));
+                break;
+            }
+          });
+
+
+
 
         // Retrieve the Database content
         Controller.Call( 'engine', { method: "GetDatabase" } )
@@ -441,7 +530,7 @@
               { name: "amount", data: "amount", title: "Amount"},
               { name: "refund", data: "refund", title: "Refund" },
               { name: "net", data: "paid", title: "Net Amount" },
-              { name: "test", data: null, title: "", orderable: false, searchable:false, render: function(d,t,r){return `<button type="button" class="btn btn-primary">Edit</button>`}}
+              { name: "option", data: null, title: "", orderable: false, searchable:false, render: function(d,t,r){return `<button type="button" class="btn btn-sm btn-primary" onclick="navEditItem('${d.id}');">Edit</button>`}}
             ],
             columnDefs: [
               { targets: [-2, -3, -4], className: "text-right", type: "num-fmt", render: DataTable.render.number( null, null, 2, "$" ) }
@@ -458,9 +547,19 @@
             var colDefn = [
               {
                 name: "name", data: "name", title: "Domain Name"
-              }
+              },
+              { name: "option", data: null, title: "", orderable: false, searchable:false, render: function(d,t,r){return `<button type="button" class="btn btn-primary" onclick="navEditItem('${d.id}');">Edit</button>`}}
             ];
             var dataSrc = Database.domain;
+            break;
+          case "category":
+            var colDefn = [
+              {
+                name: "name", data: "name", title: "Category Name"
+              },
+              { name: "option", data: null, title: "", orderable: false, searchable:false, render: function(d,t,r){return `<button type="button" class="btn btn-sm btn-primary" onclick="navEditItem('${d.id}');">Edit</button>`}}
+            ];
+            var dataSrc = Database.category;
             break;
           case "person":
           var colDefn = [
@@ -472,7 +571,8 @@
               },
               {
                 name: "pName", data: null, title: "Partner", render: function( data, type, row){ return data["partner"] != "" ? Database.person.find( x => x.id == data["partner"] ).name : "" }
-              }
+              },
+              { name: "option", data: null, title: "", orderable: false, searchable:false, render: function(d,t,r){return `<button type="button" class="btn btn-sm btn-primary" onclick="navEditItem('${d.id}');">Edit</button>`}}
             ];
             var dataSrc = Database.person;
             break;
@@ -489,7 +589,8 @@
               },
               {
                 name: "dName", data: null, title: "Expense Domain", render: function( data, type, row){ return data["domain"] != "" ? Database.domain.find( x => x.id == data["domain"] ).name : "" }
-              }
+              },
+              { name: "option", data: null, title: "", orderable: false, searchable:false, render: function(d,t,r){return `<button type="button" class="btn btn-sm btn-primary" onclick="navEditItem('${d.id}');">Edit</button>`}}
             ];
             var dataSrc = Database.supplier;
             break;

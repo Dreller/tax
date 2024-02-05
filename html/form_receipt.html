@@ -85,6 +85,8 @@
 
 
 <script>
+
+
   function CloseWin(){
     Controller.Call( 'window-manager', { method: "close" } );
   }
@@ -95,7 +97,33 @@
       window["taxData"] = response;
       console.log( "Data received:" );
       console.log( taxData );
-      // ...
+      
+      // Window Title
+      if( taxData.action == "add" ){
+        document.title = "New Receipt";
+      }else{
+        document.title = "Edit Receipt";
+      }
+
+      // Get Database
+      Controller.Call( 'data', { key: "get-all" } )
+      .then( (response) => {
+
+        // Prepare Form
+        (response.person).forEach( function( item ){
+          $("#lstPerson").append(`<option value="${item.id}">${item.name}</option>`);
+        });
+        (response.domain).forEach( function( item ){
+          $("#lstPerson").append(`<option value="${item.id}">${item.name}</option>`);
+        });
+
+
+        console.log( response );
+      });
+
+
+      
+
 
     });
   });
