@@ -12,22 +12,22 @@
     <script>
       
     </script>
-    <title>{AppName}</title>
+    <title>My Tax Receipts</title>
   </head>
   <body class="container-lg">
-    <h1 id="AppTitle" class="display-6 pb-3 mb-3 border-bottom">{AppName}</h1>
+    <h1 id="AppTitle" class="display-6 pb-3 mb-3 border-bottom">My Tax Receipts</h1>
     <div class="container">
       <div class="row">
-        <div class="col-8">
-          <p class="h4">List of existing files</p>
-          <ul id="FileList" class="list-unstyled">
-
-          </ul>
+        <div class="col-8 text-start">
+          <a id="welcomeLinkLoad" class="icon-link icon-link-hover" href=#!">
+            <svg class="bi" aria-hidden="true"><use xlink:href="../node_modules/bootstrap-icons/bootstrap-icons.svg#folder2-open"></use></svg>
+            Open Database
+          </a>
         </div>
         <div class="col-4 text-end">
           <a class="icon-link icon-link-hover" href="create_db.html">
+            <svg class="bi" aria-hidden="true"><use xlink:href="../node_modules/bootstrap-icons/bootstrap-icons.svg#folder-plus"></use></svg>
             New Database
-            <svg class="bi" aria-hidden="true"><use xlink:href="../node_modules/bootstrap-icons/bootstrap-icons.svg#arrow-right"></use></svg>
           </a>
         </div>
       </div>
@@ -39,7 +39,15 @@
 
 
       $(document).ready(function(){
-        GetAppData({filelist: "FileList"});
+        $("#welcomeLinkLoad").on("click", function(){
+          Controller.Call( 'data', {key: "load"} );
+        });
+
+
       });
+
+      
+
+
   </script>
 </html>

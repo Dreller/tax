@@ -138,7 +138,8 @@
       case "person":
         $("#MainForm").append(
           CreateObject( "text", { id: "txtName", label: "Person Name", map: "name", divSize: 6 } ) + 
-          CreateObject( "text", { id: "txtInitial", label: "Initials", map: "initial", divSize: 3 } )
+          CreateObject( "text", { id: "txtInitial", label: "Initials", map: "initial", divSize: 3 } ) +
+          CreateObject( "select", {id: "lstPartner", label: "Partner", map: "partner", divSize: 6} )
         );break;
     }
 

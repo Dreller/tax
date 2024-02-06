@@ -18,11 +18,11 @@
     <script>
       
     </script>
-    <title>{AppName}</title>
+    <title>My Tax Receipts</title>
   </head>
   <body class="container-lg">
     <div class="row mb-3 pb-3 border-bottom">
-        <div class="col lead" id="AppTitle" style="font-weight: 500;">{AppName}</div>
+        <div class="col lead" id="AppTitle" style="font-weight: 500;">My Tax Receipts</div>
         <div class="col lead text-end" id="TaxYearTitle">{TaxYearTitle}</div>
     </div>
 
@@ -32,28 +32,29 @@
             . User can select a Person Name to filter Receipts for that person
             . User can select 'Configuration' to get in Tables Configuration
       -->
-      <li class="nav-item dropdown">
+      <li id="menuButtonContainer" class="nav-item dropdown">
         <a id="navMenuButton" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#!" role="button" aria-expanded="false">Everybody</a>
         <ul class="dropdown-menu">
           <li><button type="button" class="dropdown-item" onclick="navPerson('all');">Everybody</button></li>
           <li><hr class="dropdown-divider"></li>
           <li><button type="button" class="dropdown-item" onclick="navConfig();">Configuration</button></li>
-          <li><button type="button" class="dropdown-item" onclick="navExport();">Export Data</button></li>
         </ul>
       </li>
+
+
       
       <!-- These items are shown when user select "Configuration" in the dropdown menu. -->
-        <li class="nav-item">
-          <button type="button" class="nav-link" data-list="config" data-config="supplier" style="display:none;">Suppliers</a>
+        <li class="nav-item" data-utility="nav-config" style="display:none;">
+          <button type="button" class="nav-link" data-list="config" data-config="supplier">Suppliers</a>
         </li>
-        <li class="nav-item">
-          <button type="button" class="nav-link" data-list="config" data-config="domain" style="display:none;">Domains</a>
+        <li class="nav-item" data-utility="nav-config" style="display:none;">
+          <button type="button" class="nav-link" data-list="config" data-config="domain">Domains</a>
         </li>
-        <li class="nav-item">
-          <button type="button" class="nav-link" data-list="config" data-config="category" style="display:none;">Categories</a>
+        <li class="nav-item" data-utility="nav-config" style="display:none;">
+          <button type="button" class="nav-link" data-list="config" data-config="category">Categories</a>
         </li>
-        <li class="nav-item">
-          <button type="button" class="nav-link" data-list="config" data-config="person" style="display:none;">Persons</a>
+        <li class="nav-item" data-utility="nav-config" style="display:none;">
+          <button type="button" class="nav-link" data-list="config" data-config="person">Persons</a>
         </li>
       <!-- End of Configuration Options -->
 
@@ -63,122 +64,64 @@
       <button type="button" class="btn btn-outline-primary btn-sm" onclick="navAddItem()">Add New</button>
     </div>
 
-    <div id="receiptList" class="container-lg">
-      <table id="receiptTable" data-list="receipt" class="table table-hover">
-      </table>
+    <div id="activeList" class="container-lg">
+      <table id="mainTable" class="table table-hover"></table>
     </div>
-
-    <div id="configList" class="container-lg" style="display:none;">
-      <table id="configTable" data-list="config" class="table table-hover">
-      </table>
-    </div>
-
-
-
-<!-- MODAL: Maintain Domain -->
-<div id="configModalDomain" class="modal" data-bs-backdrop="static">
-  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Expense Domain</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <div class="mb-3">
-          <label for="configDomainName" class="form-label">Name</label>
-          <input type="text" class="form-control" id="configDomainName" placeholder="Medical Expense" data-map="name">
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="saveConfigItem();">Save</button>
-      </div>
-    </div>
-  </div>
-</div> <!-- /MODAL: Maintain Domain -->
-<!-- MODAL: Maintain Person -->
-<div id="configModalPerson" class="modal" data-bs-backdrop="static">
-  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Person</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <div class="mb-3">
-          <label for="configPersonName" class="form-label">Name</label>
-          <input type="text" class="form-control" id="configPersonName" placeholder="Doe, John" data-map="name">
-        </div>
-        <div class="mb-3 col-3">
-          <label for="configPersonInitial" class="form-label">Initial</label>
-          <input type="text" class="form-control" id="configPersonInitial" placeholder="JD" data-map="initial">
-        </div>
-        <div class="mb-3">
-          <label for="configPersonPartner" class="form-label">Partner</label>
-          <select class="form-select" id="configPersonPartner" aria-label="Partner" data-map="partner" data-source="person">
-          </select>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="saveConfigItem();">Save</button>
-      </div>
-    </div>
-  </div>
-</div> <!-- /MODAL: Maintain Person -->
-<!-- MODAL: Maintain Supplier -->
-<div id="configModalSupplier" class="modal" data-bs-backdrop="static">
-  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Supplier</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <div class="mb-3">
-          <label for="configSupplierDomain" class="form-label">Expense Domain</label>
-          <select class="form-select" id="configSupplierDomain" aria-label="Expense Domain" data-map="domain" data-source="domain">
-          </select>
-        </div>
-        <div class="mb-3">
-          <label for="configSupplierName" class="form-label">Name</label>
-          <input type="text" class="form-control" id="configSupplierName" placeholder="Acme inc." data-map="name">
-        </div>
-        <div class="mb-3">
-          <label for="configSupplierAddress">Address</label>
-          <textarea class="form-control" placeholder="" id="configSupplierAddress" style="height: 60px" data-map="address"></textarea>
-        </div>
-        <div class="row g-2">
-          <div class="col-md mb-3">
-            <label for="configSupplierPhone" class="form-label">Phone Number</label>
-            <input type="tel" class="form-control" id="configSupplierPhone" data-map="phone">
-          </div>
-          <div class="col-md mb-3">
-            <label for="configSupplierContact" class="form-label">Other Contact Method</label>
-            <input type="text" class="form-control" id="configSupplierContact" data-map="contact">
-          </div>
-        </div>
-        <div class="mb-3">
-          <label for="configSupplierTax" class="form-label">Tax Registration Numbers</label>
-          <input type="text" class="form-control" id="configSupplierTax" placeholder="" data-map="tax">
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="saveConfigItem();">Save</button>
-      </div>
-    </div>
-  </div>
-</div>  <!-- /MODAL: Maintain Supplier -->
 
   </body>
+
   <script>
-    var TAX = {
-      menu: {
-        mainSection: "home",
-        subSection: ""
+
+    $(document).ready(function(){
+
+      Controller.Call( 'data', { key: "get-all"} )
+      .then( (response) => {
+        TAX["data"] = response;
+        $("#TaxYearTitle").html(TAX.data.meta.year);
+
+
+      // Draw Tabs (Add Domains as Tabs)
+      var sTabs = `<li class="nav-item" data-utility="nav-receipt">
+            <button type="button" class="nav-link" data-list="list" data-domain="all">All Receipts</a>
+          </li>`;
+      if( (TAX.data.domain).length > 0 ){
+        (TAX.data.domain).forEach( function(elem) {
+          sTabs = sTabs + `
+          <li class="nav-item" data-utility="nav-receipt">
+            <button type="button" class="nav-link" data-list="list" data-domain="${elem.id}">${elem.name}</a>
+          </li>`;
+        });
+        $("#menuButtonContainer").after( sTabs );
       }
-    };
+
+
+      // Install Event Listeners
+        // Tabs
+          $("#homeTabs > li > button").on("click", function(){
+            $("#homeTabs > li > button").removeClass("active");
+            $(this).addClass("active");
+            switch( $(this).data("list") ){
+              case "receipt":
+                $("#receiptList").show();
+                $("#configList").hide();
+                Table_Receipt_Build();
+                break;
+              case "config":
+                TAX.menu = {
+                  mainSection: "configuration",
+                  subSection: $(this).data("config")
+                }
+                $("#receiptList").hide();
+                $("#configList").show();
+                tblBuild($(this).data("config"));
+                break;
+            }
+          });
+
+      });
+
+      });
+
 
 
     function navConfig(){
@@ -187,24 +130,32 @@
         subSection: ""
       }
 
+      tblClear();
+
       $("#navMenuButton").html("Configuration");
-      $(`button.nav-link[data-list='config']`).show();
+      $(`[data-utility='nav-receipt']`).hide();
+      $(`[data-utility='nav-config']`).show();
     }
+
+    function navConfigItem( configType = "" ){
+      Table_Config_Build( configType );
+    }
+
     function navPerson( sPerson ){
       TAX.menu = {
         mainSection: "home",
         subSection: sPerson
       }
 
-      $(`button.nav-link[data-list='config']`).hide();
+      tblClear();
+
+      $(`[data-utility='nav-receipt']`).show();
+      $(`[data-utility='nav-config']`).hide();
       if( sPerson == "all" ){
         $("#navMenuButton").html("Everybody");
       }
     }
 
-    function navExport(){
-      Controller.Call( 'data', { key: "export" } );
-    }
 
     function navAddItem(){
       console.log( "Adding: " + TAX.menu.subSection );
@@ -217,8 +168,74 @@
     }
 
 
+    function tblClear(){
+      if( TAX.datatable !== undefined ){
+        TAX.datatable.destroy();
+        $("#mainTable").empty();
+      }
+    }
 
+    function tblBuild( configType ){
+        switch( configType ){
+          case "domain":
+            var colDefn = [
+              { name: "name", data: "name", title: "Domain Name" },
+              { name: "option", data: null, title: "", orderable: false, searchable:false, render: function(d,t,r){return `<button type="button" class="btn btn-primary" onclick="navEditItem('${d.id}');">Edit</button>`}}
+            ];
+            var dataSrc = TAX.data.domain;
+            break;
+          case "category":
+            var colDefn = [
+              {  name: "name", data: "name", title: "Category Name" },
+              { name: "option", data: null, title: "", orderable: false, searchable:false, render: function(d,t,r){return `<button type="button" class="btn btn-sm btn-primary" onclick="navEditItem('${d.id}');">Edit</button>`}}
+            ];
+            var dataSrc = TAX.data.category;
+            break;
+          case "person":
+          var colDefn = [
+              {  name: "name", data: "name", title: "Person Name" },
+              {  name: "initial", data: "initial", title: "Initials"},
+              {  name: "pName", data: null, title: "Partner", render: function( data, type, row){ return data["partner"] != "" ? TAX.data.person.find( x => x.id == data["partner"] ).name : "" } },
+              { name: "option", data: null, title: "", orderable: false, searchable:false, render: function(d,t,r){return `<button type="button" class="btn btn-sm btn-primary" onclick="navEditItem('${d.id}');">Edit</button>`}}
+            ];
+            var dataSrc = TAX.data.person;
+            break;
+          case "supplier":
+          var colDefn = [
+              {
+                name: "name", data: "name", title: "Supplier Name"
+              },
+              {
+                name: "address", data: "address", title: "Address"
+              },
+              {
+                name: "phone", data: "phone", title: "Phone" 
+              },
+              {
+                name: "dName", data: null, title: "Expense Domain", render: function( data, type, row){ return data["domain"] != "" ? TAX.data.domain.find( x => x.id == data["domain"] ).name : "" }
+              },
+              { name: "option", data: null, title: "", orderable: false, searchable:false, render: function(d,t,r){return `<button type="button" class="btn btn-sm btn-primary" onclick="navEditItem('${d.id}');">Edit</button>`}}
+            ];
+            var dataSrc = TAX.data.supplier;
+            break;
+        }
+        
+        tblClear();
 
+        TAX["datatable"] = $("#mainTable").DataTable({
+          data: dataSrc,
+            lengthChange: false,
+            paging: false,
+            language: {
+              info: "Showing _TOTAL_ entries.",
+              infoEmpty: "This table is empty.",
+              infoFiltered: "  Filtered from _MAX_ records."
+            },
+            columns: colDefn,
+            buttons: ['pdf']
+        });
+
+    }
 
 ///////////////////////////////////////////////////////////
 //                    OLD CODE BELOW                     //
@@ -457,54 +474,6 @@ var currentConfigItem = "";
 
     }
 
-      $(document).ready(function(){
-        GetAppData();
-        backHome();
-
-      // Install Event Listeners
-        // Tabs
-          $("#homeTabs > li > button").on("click", function(){
-            $("#homeTabs > li > button").removeClass("active");
-            $(this).addClass("active");
-            switch( $(this).data("list") ){
-              case "receipt":
-                $("#receiptList").show();
-                $("#configList").hide();
-                Table_Receipt_Build();
-                break;
-              case "config":
-                TAX.menu = {
-                  mainSection: "configuration",
-                  subSection: $(this).data("config")
-                }
-                $("#receiptList").hide();
-                $("#configList").show();
-                Table_Config_Build($(this).data("config"));
-                break;
-            }
-          });
-
-
-
-
-        // Retrieve the Database content
-        Controller.Call( 'engine', { method: "GetDatabase" } )
-        .then( (response) => {
-            Database = response;
-            $("#TaxYearTitle").html("Tax Year " + Database.meta.year );
-
-            // https://www.npmjs.com/package/pikaday
-            picker = new Pikaday({
-              field: document.getElementById('receiptDate'),
-              minDate: new Date(Database.meta.year + "-01-01"),
-              maxDate: new Date(Database.meta.year + "-12-31")
-            });
-
-            Table_Receipt_Build();
-
-        });
-
-      });
 
       function Table_Receipt_Build(){
         if( window["tableReceipt"] !== undefined ){
@@ -541,81 +510,7 @@ var currentConfigItem = "";
       function Table_Receipt_Update(){
         tableReceipt.draw();
       }
-      function Table_Config_Build( configType ){
-        switch( configType ){
-          case "domain":
-            var colDefn = [
-              {
-                name: "name", data: "name", title: "Domain Name"
-              },
-              { name: "option", data: null, title: "", orderable: false, searchable:false, render: function(d,t,r){return `<button type="button" class="btn btn-primary" onclick="navEditItem('${d.id}');">Edit</button>`}}
-            ];
-            var dataSrc = Database.domain;
-            break;
-          case "category":
-            var colDefn = [
-              {
-                name: "name", data: "name", title: "Category Name"
-              },
-              { name: "option", data: null, title: "", orderable: false, searchable:false, render: function(d,t,r){return `<button type="button" class="btn btn-sm btn-primary" onclick="navEditItem('${d.id}');">Edit</button>`}}
-            ];
-            var dataSrc = Database.category;
-            break;
-          case "person":
-          var colDefn = [
-              {
-                name: "name", data: "name", title: "Person Name"
-              },
-              {
-                name: "initial", data: "initial", title: "Initials"
-              },
-              {
-                name: "pName", data: null, title: "Partner", render: function( data, type, row){ return data["partner"] != "" ? Database.person.find( x => x.id == data["partner"] ).name : "" }
-              },
-              { name: "option", data: null, title: "", orderable: false, searchable:false, render: function(d,t,r){return `<button type="button" class="btn btn-sm btn-primary" onclick="navEditItem('${d.id}');">Edit</button>`}}
-            ];
-            var dataSrc = Database.person;
-            break;
-          case "supplier":
-          var colDefn = [
-              {
-                name: "name", data: "name", title: "Supplier Name"
-              },
-              {
-                name: "address", data: "address", title: "Address"
-              },
-              {
-                name: "poc", data: null, title: "Contact", render: function( d,t,r ){return d["contact"] == "" ? "" + d["phone"] : d["contact"] }
-              },
-              {
-                name: "dName", data: null, title: "Expense Domain", render: function( data, type, row){ return data["domain"] != "" ? Database.domain.find( x => x.id == data["domain"] ).name : "" }
-              },
-              { name: "option", data: null, title: "", orderable: false, searchable:false, render: function(d,t,r){return `<button type="button" class="btn btn-sm btn-primary" onclick="navEditItem('${d.id}');">Edit</button>`}}
-            ];
-            var dataSrc = Database.supplier;
-            break;
-        }
-        if( window["tableConfig"] !== undefined ){
-          console.log("DataTable already exists - Destroying...");
-          window["tableConfig"].destroy();
-          $("#configTable").empty();
-        }
-        console.log( "Building DataTable for: " + configType);
-        console.log( colDefn );
-        window["tableConfig"] = $("#configTable")
-        .DataTable( {
-            data: dataSrc,
-            lengthChange: false,
-            paging: false,
-            language: {
-              info: "Showing _TOTAL_ entries.",
-              infoEmpty: "This table is empty.",
-              infoFiltered: "  Filtered from _MAX_ records."
-            },
-            columns: colDefn,
-            buttons: ['pdf']
-          } );
-      }
+ 
 
   </script>
 </html>

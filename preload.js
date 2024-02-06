@@ -7,6 +7,8 @@ const {
 contextBridge.exposeInMainWorld( "Controller", {
         // From HTML to Main Process - Wait for a Response.
         Call: function( callChannel, callParams ){
+            console.log( `PreLoad - ContextBridge - Controller - Call - ` + callChannel );
+            console.log( callParams );
             return ipcRenderer.invoke( callChannel, callParams );
         },
         // From HTML to Main Process - Don't wait for a Response.
@@ -17,6 +19,3 @@ contextBridge.exposeInMainWorld( "Controller", {
         }
     }
 );
-
-const params = new URLSearchParams(location.search);
-console.log( params );

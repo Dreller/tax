@@ -11,9 +11,14 @@
 console.log( process.env );
 
 // Initialize Variables at the Main Level
+    var _Database = {};
+    var _Info = {};
+
+
+    // Legacy
     var _Debug = true;
     var _SourceFilesList;
-    var _Database = {};
+
     var _JsonMemory;
     var _JsonMemoryFile = "";
     var _JsonMemoryFilePath = "";
@@ -82,49 +87,7 @@ function ChildWindow( sTargetPage, oArgs = {} ){
 
 // Database Manipulation Methods
 const DB = {
-    GetFiles: function(){
-        _LOG( "> Get List of Source Files" );
-        _SourceFilesList = [];
-        fs.readdir( './node_modules/json-db-memory/data', function( err, files ){
-            if( err ){
-                console.error( 'XXXXX -> Error in DB.GetFiles <- XXXXX');
-                console.error( err );
-            }
-            _LOG( files.length + " file(s) discovered." );
-            _SourceFilesList = files.filter( x => x != "example.json" && x != "testData.json" ).sort();
-            _LOG( "Source Files Found:", _SourceFilesList );
-        } );
-    },
-    CreateFile: function( oParams ){
-        _LOG( "> Create New Database", oParams );
-        var Keys = ['year', 'demo'];
-        if( TOOL.ArrayContains( Keys, oParams ) ){
-            if( oParams.demo == true ){
-                DB.CreateDemoFile( oParams );
-            }else{
-                _JsonMemory = new JsonDataStore( oParams.year );
-                _JsonMemory.set( 'info', JSON.stringify(oParams) );
-                _JsonMemory.set( 'supplier', '[]' );
-                _JsonMemory.set( 'person', '[]' );
-                _JsonMemory.set( 'domain', '[]' );
-                _JsonMemory.set( 'receipt', '[]' );
-                _JsonMemory.set( 'category', '[]' );
-            }
-        }else{
-            console.error( "XXXXX -> Error in DB.CreateFile <- XXXXX" );
-            console.error( "Missing Keys: " + Keys.join(", ") );
-        }
-        return true;
-    },
-    CreateDemoFile: function( oParams ){
-        _JsonMemory = new JsonDataStore( oParams.year + "-DEMO" );
-        _JsonMemory.set( 'info', JSON.stringify( oParams ) );
-        _JsonMemory.set( 'supplier', '[]' );
-        _JsonMemory.set( 'person', '[]' );
-        _JsonMemory.set( 'domain', '[]' );
-        _JsonMemory.set( 'receipt', '[]' );
-        _JsonMemory.set( 'category', '[]' );
-    },
+  
     LoadFile: function( sFile = "" ){
         _LOG( "> Load a Database ", {file: sFile} );
         _JsonMemoryFile = sFile;
@@ -144,17 +107,7 @@ const DB = {
     GetObject: function(){
         return _Database;
     },
-    Insert: function( sTable = "", oData = {} ){
-        _Database[ sTable.toLowerCase() ].push( oData );
-        _JsonMemory.set( sTable.toLowerCase(), JSON.stringify( _Database[ sTable.toLowerCase() ] ) );
-        return true;
-    },
-    Update: function( sTable = "", oData = {} ){
-        _Database[ sTable.toLowerCase() ] = _Database[ sTable.toLowerCase() ].filter( x => x.id != oData.id );
-        _Database[ sTable.toLowerCase() ].push( oData );
-        _JsonMemory.set( sTable.toLowerCase(), JSON.stringify( _Database[ sTable.toLowerCase() ] ) );
-        return true;
-    },
+   
     Export: function(){
         dialog.showOpenDialog( _MainWin, {
             properties: ["openDirectory"],
@@ -204,12 +157,99 @@ const TOOL = {
     }
 }
 
+const DATA = {
+    GetAll: function(){
+        return _Database;
+    },
+    CreateFile: function( sYear = "" ){
 
+        // Ask user where to save the file...
+        dialog.showSaveDialog( _MainWin, {
+            title: "New Database Location",
+            buttonLabel: "Create here",
+            filters: [
+                { name: "CompilaTAX files", extensions: ["ctax"]}
+            ]
+        } ).then( result => {
+            if( result.canceled == false ){
+                var myFileDest = result.filePath;
+                _Database = {
+                    meta: {
+                        year: sYear,
+                        dbv: 1
+                    },
+                    person: [],
+                    domain: [],
+                    category: [],
+                    supplier: [],
+                    receipt: []
+                };
+                fs.writeFileSync( myFileDest, JSON.stringify( _Database, null, 4 ), function( err ){
+                    if( err ) throw err;
+                    console.log( 'New File Created!' );
+                } );
+                _Info = {
+                    db: {
+                        path: result.filePath,
+                        version: 1
+                    }
+                }
+                _MainWin.loadFile('./html/home.html');
+                return true;
+            }
+        });
+    },
+    LoadFile: function(){
 
+        // Ask user to browse to the file to load...
+        dialog.showOpenDialog( _MainWin, {
+            title: "Open a Database",
+            buttonLabel: "Open",
+            filters: [
+                { name: "CompilaTAX files", extensions: ["ctax"]}
+            ],
+            properties: [
+                "openFile"
+            ]
+        }).then( result => {
+            if( result.canceled == false ) {
+                fs.readFile( result.filePaths[0], function( err, fileContent ){
+                    if( err ) throw err;
+                    _Database = JSON.parse( fileContent);
+                    _Info = {
+                        db: {
+                            path: result.filePaths[0],
+                            version: _Database.meta.dbv
+                        }
+                    }
+                    console.log( _Database );
+                    console.log( _Info );
+                    _MainWin.loadFile('./html/home.html');
+                    return true;
+                } );
+            }
+        });
 
-DB.GetFiles();
-
-
+    },
+    SaveFile: function(){
+        fs.writeFile( _Info.db.path, JSON.stringify( _Database, null, 4 ), function( err ){
+            if( err ) throw err;
+            console.log( 'Database Updated!' );
+            return true;
+        } );
+    },
+    Insert: function( sTable = "", oData = {} ){
+        _Database[ sTable.toLowerCase() ].push( oData );
+        DATA.SaveFile();
+        return true;
+    },
+    Update: function( sTable = "", oData = {} ){
+        _Database[ sTable.toLowerCase() ] = _Database[ sTable.toLowerCase() ].filter( x => x.id != oData.id );
+        _Database[ sTable.toLowerCase() ].push( oData );
+        DATA.SaveFile();
+        return true;
+    }
+}
 
 
  ipcMain.handle( 'window-manager', async( event, MyObject ) => {
@@ -217,7 +257,9 @@ DB.GetFiles();
     var WindowActionList = [
         "open",
         "close",
-        "get-data"
+        "get-data",
+        "tell",
+        "error"
     ];
     if( WindowActionList.includes( WindowAction) ){
         switch( WindowAction ){
@@ -230,6 +272,16 @@ DB.GetFiles();
             case "get-data":
                 return _SubWinData;
                 _SubWinData = {};
+                break;
+            case "tell":
+                dialog.showMessageBox( _MainWin,{
+                    message: MyObject.title,
+                    detail: MyObject.message
+                });
+                return true;
+                break;
+            case "error":
+                dialog.showErrorBox( MyObject.title, MyObject.message );
                 break;
         }
     }else{
@@ -246,20 +298,20 @@ DB.GetFiles();
   *     }
   * 
   */
- ipcMain.handle( 'data', async( event, MyObject ) => {
+ ipcMain.handle( 'data', ( event, MyObject ) => {
     switch( MyObject.key ){
         case "get-all":
-            return  await DB.GetObject();
+            return  DATA.GetAll();
             break;
         case "save":
             if( MyObject.action == "add" ){
-                return DB.Insert( MyObject.table, MyObject.data )
+                return DATA.Insert( MyObject.table, MyObject.data )
             }else{
-                return DB.Update( MyObject.table, MyObject.data )
+                return DATA.Update( MyObject.table, MyObject.data )
             }
             break;
-        case "export":
-            return await DB.Export();
+        case "load":
+            return DATA.LoadFile();
             break;
         default: 
             console.error( `Unhandled call to IPC Channel 'data': ${JSON.stringify(MyObject)}` );
@@ -268,6 +320,10 @@ DB.GetFiles();
 
  });
 
+
+ 
+
+
 ipcMain.handle('engine', async ( event, MyObject ) => {
     //console.group("Invoke 'index.js'");
     console.log( "Call to 'engine'...");
@@ -275,7 +331,7 @@ ipcMain.handle('engine', async ( event, MyObject ) => {
     var response = true;
     if( MyObject.constructor === Object ){
         if( MyObject.method == "DatabaseCreate" ){ 
-            var response = await DB.CreateFile( MyObject );
+            var response = await DATA.CreateFile( MyObject.year );
         }
         if( MyObject.method == "DatabaseSaveSegment" ){
             var response = await DatabaseSaveSegment( MyObject );
@@ -284,13 +340,7 @@ ipcMain.handle('engine', async ( event, MyObject ) => {
             var response = await DB.LoadFile( MyObject.file );
         }
         if( MyObject.method == "GetDatabase" ){
-            var response = _Database;
-        }
-        if( MyObject.method == "GetAppContext" ){
-            var response = {
-                name: "CompilaTAX",
-                dbfiles: _SourceFilesList
-            };
+            var response = await DATA.GetAll();
         }
         if( MyObject.method == "DatabaseSaveReceipt" ){
             var response = await DatabaseSaveReceipt( MyObject );
