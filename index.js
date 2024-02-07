@@ -65,7 +65,7 @@ function ChildWindow( sTargetPage, oArgs = {} ){
          parent: _MainWin,
         modal: true,
         width: 800,
-        height: 600,
+        height: 700,
         center: true,
         autoHideMenuBar: false,
         webPreferences: {
@@ -268,6 +268,7 @@ const DATA = {
                 break;
             case "close":
                 _SubWin.hide();
+                _MainWin.webContents.executeJavaScript('tblRefresh()');
                 break;
             case "get-data":
                 return _SubWinData;
@@ -304,6 +305,8 @@ const DATA = {
             return  DATA.GetAll();
             break;
         case "save":
+            console.log( "Object to save");
+            console.log( MyObject.data );
             if( MyObject.action == "add" ){
                 return DATA.Insert( MyObject.table, MyObject.data )
             }else{

@@ -34,15 +34,14 @@
       -->
       <li id="menuButtonContainer" class="nav-item dropdown">
         <a id="navMenuButton" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#!" role="button" aria-expanded="false">Everybody</a>
-        <ul class="dropdown-menu">
-          <li><button type="button" class="dropdown-item" onclick="navPerson('all');">Everybody</button></li>
+        <ul id="navMenuDropdown" class="dropdown-menu">
+
+          <li><button type="button" class="dropdown-item" id="menuDropdownAll" onclick="navPerson('all');">Everybody</button></li>
           <li><hr class="dropdown-divider"></li>
           <li><button type="button" class="dropdown-item" onclick="navConfig();">Configuration</button></li>
         </ul>
       </li>
 
-
-      
       <!-- These items are shown when user select "Configuration" in the dropdown menu. -->
         <li class="nav-item" data-utility="nav-config" style="display:none;">
           <button type="button" class="nav-link" data-list="config" data-config="supplier">Suppliers</a>
@@ -81,19 +80,29 @@
 
 
       // Draw Tabs (Add Domains as Tabs)
-      var sTabs = `<li class="nav-item" data-utility="nav-receipt">
-            <button type="button" class="nav-link" data-list="list" data-domain="all">All Receipts</a>
-          </li>`;
-      if( (TAX.data.domain).length > 0 ){
-        (TAX.data.domain).forEach( function(elem) {
-          sTabs = sTabs + `
-          <li class="nav-item" data-utility="nav-receipt">
-            <button type="button" class="nav-link" data-list="list" data-domain="${elem.id}">${elem.name}</a>
-          </li>`;
+        var sTabs = `<li class="nav-item" data-utility="nav-receipt">
+              <button type="button" class="nav-link" data-list="list" data-domain="all">All Receipts</a>
+            </li>`;
+        if( (TAX.data.domain).length > 0 ){
+          (TAX.data.domain).forEach( function(elem) {
+            sTabs = sTabs + `
+            <li class="nav-item" data-utility="nav-receipt">
+              <button type="button" class="nav-link" data-list="list" data-domain="${elem.id}">${elem.name}</a>
+            </li>`;
+          });
+          $("#menuButtonContainer").after( sTabs );
+        }
+      // Add Each person option in the dropdown menu
+      var sChoices = ``;
+      if( (TAX.data.person).length > 0 ){
+        ( TAX.data.person ).forEach( function( elem ){
+          sChoices = sChoices + `<li><button data-control="menu-person" type="button" class="dropdown-item" onclick="navPerson('${elem.id}');">${elem.name}</button></li>`;
         });
-        $("#menuButtonContainer").after( sTabs );
+        $("#menuDropdownAll").before( sChoices );
       }
 
+
+      
 
       // Install Event Listeners
         // Tabs
@@ -138,14 +147,19 @@
     }
 
     function navConfigItem( configType = "" ){
+      TAX.menu = {
+        mainSection: "configuration",
+        subSection: configType
+      }
       Table_Config_Build( configType );
     }
 
     function navPerson( sPerson ){
       TAX.menu = {
         mainSection: "home",
-        subSection: sPerson
-      }
+        subSection: "all"
+      };
+      TAX.who = sPerson;
 
       tblClear();
 
@@ -153,18 +167,32 @@
       $(`[data-utility='nav-config']`).hide();
       if( sPerson == "all" ){
         $("#navMenuButton").html("Everybody");
+      }else{
+        let thisPerson = ( TAX.data.person ).find( x => x.id == sPerson );
+        $("#navMenuButton").html(thisPerson.name);
       }
     }
 
 
     function navAddItem(){
-      console.log( "Adding: " + TAX.menu.subSection );
-      Controller.Call( 'window-manager' , { method: "open", page: "form_.html", type: TAX.menu.subSection, action: "add", id: "0" } );
+      if( TAX.menu.mainSection == "configuration" ){
+        console.log( "Adding: " + TAX.menu.subSection );
+        Controller.Call( 'window-manager' , { method: "open", page: "form_.html", type: TAX.menu.subSection, action: "add", id: "0" } );        
+      }else{
+        console.log( "Adding a Receipt" );
+        Controller.Call( 'window-manager' , { method: "open", page: "form_.html", type: "receipt", action: "add", id: "0", who: TAX.who } ); 
+      }
+
     }
 
     function navEditItem( sGuid ){
-      console.log( "Editing: " + TAX.menu.subSection );
-      Controller.Call( 'window-manager' , { method: "open", page: "form_.html", type: TAX.menu.subSection, action: "edit", id: sGuid } );
+      if( TAX.menu.mainSection == "configuration" ){
+        console.log( "Editing: " + TAX.menu.subSection );
+        Controller.Call( 'window-manager' , { method: "open", page: "form_.html", type: TAX.menu.subSection, action: "edit", id: sGuid } );        
+      }else{
+        console.log( "Editing a Receipt" );
+        Controller.Call( 'window-manager' , { method: "open", page: "form_.html", type: "receipt", action: "edit", id: sGuid } ); 
+      }
     }
 
 
@@ -173,6 +201,18 @@
         TAX.datatable.destroy();
         $("#mainTable").empty();
       }
+    }
+
+    function tblRefresh(){
+      console.log( "Refreshing the table...." );
+      Controller.Call( 'data', { key: "get-all"} )
+      .then( (response) => {
+        TAX["data"] = response;
+
+          if( TAX.menu.mainSection == "configuration" ){
+            tblBuild( TAX.menu.subSection );
+          }
+      });
     }
 
     function tblBuild( configType ){
@@ -186,6 +226,7 @@
             break;
           case "category":
             var colDefn = [
+              {  name: "dname", data: null, title: "Domain", render: function( data, type, row){ return data["domain"] != "" ? TAX.data.domain.find( x => x.id == data["domain"] ).name : "" } },
               {  name: "name", data: "name", title: "Category Name" },
               { name: "option", data: null, title: "", orderable: false, searchable:false, render: function(d,t,r){return `<button type="button" class="btn btn-sm btn-primary" onclick="navEditItem('${d.id}');">Edit</button>`}}
             ];
