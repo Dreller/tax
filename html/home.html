@@ -167,10 +167,12 @@
       $(`[data-utility='nav-config']`).hide();
       if( sPerson == "all" ){
         $("#navMenuButton").html("Everybody");
+        
       }else{
         let thisPerson = ( TAX.data.person ).find( x => x.id == sPerson );
         $("#navMenuButton").html(thisPerson.name);
       }
+      tblReceipts( sPerson, "all" );
     }
 
 
@@ -200,6 +202,7 @@
       if( TAX.datatable !== undefined ){
         TAX.datatable.destroy();
         $("#mainTable").empty();
+        TAX.datatable = undefined;
       }
     }
 
@@ -211,16 +214,60 @@
 
           if( TAX.menu.mainSection == "configuration" ){
             tblBuild( TAX.menu.subSection );
+          }else{
+            tblReceipts( TAX.who, TAX.menu.subSection );
           }
       });
     }
+
+    function tblReceipts( sWho = "all", sWhat = "all" ){
+      var colDefn = [
+        { name: "when",   data: null,       title: "Date",      orderable: true,    render: function(d,t,r){ return d.date.substring(0,4) + "-" + d.date.substring(4,6) + "-" + d.date.substring(6)}},
+        { name: "who",    data: null,       title: "Person",    orderable: true,    render: function(d,t,r){ return TAX.data.person.find( x => x.id == d.person ).name }},
+        { name: "what",   data: null,       title: "Expense",   orderable: true,    render: function(d,t,r){ 
+          var thisCategory = TAX.data.category.find( x => x.id == d.category );
+          console.log( thisCategory );
+          return TAX.data.domain.find( x => x.id == thisCategory.domain ).name + " > " + thisCategory.name;
+        }},
+        { name: "where",    data: null,       title: "Supplier", orderable: true,    render: function(d,t,r){ return TAX.data.supplier.find( x => x.id == d.supplier ).name }},
+        { name: "amount",   data: "paid",     title: "Amount",   orderable: true,    render: $.fn.dataTable.render.number(" ", ",", 2, "", " $"), className: "dt-body-right" },
+        { name: "option", data: null, title: "", orderable: false, searchable:false, render: function(d,t,r){return `<button type="button" class="btn btn-sm btn-light" onclick="navEditItem('${d.id}');">Edit</button>`}}
+      
+      ];
+
+      tblClear();
+
+      // Filtered DataCollection
+      let dataColl = TAX.data.receipt;
+      if( sWho != "all"  ){
+        dataColl = dataColl.filter( x => x.person == sWho );
+      }
+      if( sWhat != "all"  ){
+        dataColl = dataColl.filter( x => x.category == sWhat );
+      }
+
+      TAX["datatable"] = $("#mainTable").DataTable({
+          data: dataColl,
+            lengthChange: false,
+            paging: false,
+            language: {
+              info: "Showing _TOTAL_ entries.",
+              infoEmpty: "This table is empty.",
+              infoFiltered: "  Filtered from _MAX_ records."
+            },
+            columns: colDefn,
+            buttons: ['pdf']
+        });
+
+    }
+
 
     function tblBuild( configType ){
         switch( configType ){
           case "domain":
             var colDefn = [
               { name: "name", data: "name", title: "Domain Name" },
-              { name: "option", data: null, title: "", orderable: false, searchable:false, render: function(d,t,r){return `<button type="button" class="btn btn-primary" onclick="navEditItem('${d.id}');">Edit</button>`}}
+              { name: "option", data: null, title: "", orderable: false, searchable:false, render: function(d,t,r){return `<button type="button" class="btn btn-light" onclick="navEditItem('${d.id}');">Edit</button>`}}
             ];
             var dataSrc = TAX.data.domain;
             break;
@@ -228,7 +275,7 @@
             var colDefn = [
               {  name: "dname", data: null, title: "Domain", render: function( data, type, row){ return data["domain"] != "" ? TAX.data.domain.find( x => x.id == data["domain"] ).name : "" } },
               {  name: "name", data: "name", title: "Category Name" },
-              { name: "option", data: null, title: "", orderable: false, searchable:false, render: function(d,t,r){return `<button type="button" class="btn btn-sm btn-primary" onclick="navEditItem('${d.id}');">Edit</button>`}}
+              { name: "option", data: null, title: "", orderable: false, searchable:false, render: function(d,t,r){return `<button type="button" class="btn btn-sm btn-light" onclick="navEditItem('${d.id}');">Edit</button>`}}
             ];
             var dataSrc = TAX.data.category;
             break;
@@ -237,7 +284,7 @@
               {  name: "name", data: "name", title: "Person Name" },
               {  name: "initial", data: "initial", title: "Initials"},
               {  name: "pName", data: null, title: "Partner", render: function( data, type, row){ return data["partner"] != "" ? TAX.data.person.find( x => x.id == data["partner"] ).name : "" } },
-              { name: "option", data: null, title: "", orderable: false, searchable:false, render: function(d,t,r){return `<button type="button" class="btn btn-sm btn-primary" onclick="navEditItem('${d.id}');">Edit</button>`}}
+              { name: "option", data: null, title: "", orderable: false, searchable:false, render: function(d,t,r){return `<button type="button" class="btn btn-sm btn-light" onclick="navEditItem('${d.id}');">Edit</button>`}}
             ];
             var dataSrc = TAX.data.person;
             break;
@@ -255,7 +302,7 @@
               {
                 name: "dName", data: null, title: "Expense Domain", render: function( data, type, row){ return data["domain"] != "" ? TAX.data.domain.find( x => x.id == data["domain"] ).name : "" }
               },
-              { name: "option", data: null, title: "", orderable: false, searchable:false, render: function(d,t,r){return `<button type="button" class="btn btn-sm btn-primary" onclick="navEditItem('${d.id}');">Edit</button>`}}
+              { name: "option", data: null, title: "", orderable: false, searchable:false, render: function(d,t,r){return `<button type="button" class="btn btn-sm btn-light" onclick="navEditItem('${d.id}');">Edit</button>`}}
             ];
             var dataSrc = TAX.data.supplier;
             break;

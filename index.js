@@ -2,10 +2,8 @@
     const { app, BrowserWindow, ipcMain, dialog } = require('electron');
     const path = require('node:path');
     const crypto = require('crypto');
-    const jm = require('json-db-memory');
     const fs = require('fs');
     const url = require('url');
-    const { default: JsonDataStore } = require('json-db-memory');
     const { constants } = require('node:fs/promises');
 
 console.log( process.env );
@@ -43,7 +41,7 @@ function OpenMainWindow(){
         width: 1250,
         height: 600,
         center: true,
-        autoHideMenuBar: false,
+        autoHideMenuBar: true,
         webPreferences: {
             preload: path.join( __dirname  + '/preload.js' ),
             nodeIntegration: true,
@@ -52,7 +50,7 @@ function OpenMainWindow(){
     });
     _MainWin.loadFile('./html/welcome.html');
     if( _Debug ){
-        _MainWin.webContents.openDevTools();
+        // _MainWin.webContents.openDevTools();
     }
 }
 
@@ -67,7 +65,8 @@ function ChildWindow( sTargetPage, oArgs = {} ){
         width: 800,
         height: 700,
         center: true,
-        autoHideMenuBar: false,
+        autoHideMenuBar: true,
+        titleBarStyle: 'hidden',
         webPreferences: {
             preload: path.join( __dirname  + '/preload.js' )
         }
@@ -87,55 +86,8 @@ function ChildWindow( sTargetPage, oArgs = {} ){
 
 // Database Manipulation Methods
 const DB = {
-  
-    LoadFile: function( sFile = "" ){
-        _LOG( "> Load a Database ", {file: sFile} );
-        _JsonMemoryFile = sFile;
-        _JsonMemoryFilePath = './node_modules/json-db-memory/data/' + sFile + ".json";
-        _JsonMemory = new JsonDataStore( sFile );
-        console.log( _JsonMemory );
-        _Database = {
-            meta: JSON.parse( _JsonMemory.get( "meta" ) ),
-            domain: JSON.parse( _JsonMemory.get( "domain" ) ),
-            category: JSON.parse( _JsonMemory.get( "category" ) ),
-            person: JSON.parse( _JsonMemory.get( "person" ) ),
-            supplier: JSON.parse( _JsonMemory.get( "supplier" ) ),
-            receipt: JSON.parse( _JsonMemory.get( "receipt" ) )
-        }
-        return true;
-    },
     GetObject: function(){
         return _Database;
-    },
-   
-    Export: function(){
-        dialog.showOpenDialog( _MainWin, {
-            properties: ["openDirectory"],
-            title: "Export Location",
-            buttonLabel: "Export here"
-        } ).then( result => {
-            if( result.canceled == false ){
-
-                var myDate = new Date();
-                var myYear = myDate.getFullYear();
-                var myMonth = ( myDate.getMonth() + 1 ).toString().padStart( 2, '0' );
-                var myDay = myDate.getDate().toString().padStart( 2, '0' );
-                var myHour = myDate.getHours().toString().padStart(2, '0' );
-                var myMinute = myDate.getMinutes().toString().padStart(2, '0' );
-                var mySecond = myDate.getSeconds().toString().padStart(2, '0' );
-                var myFileName = `Tax Data - Year ${_JsonMemoryFile} - ${myYear}${myMonth}${myDay}-${myHour}${myMinute}${mySecond}.json`;
-                var myFileDest = result.filePaths[0] + "/" + myFileName;
-                _LOG( "Export File: " + _JsonMemoryFilePath );
-                _LOG( " ... to: " + myFileDest );
-                fs.copyFileSync( _JsonMemoryFilePath, myFileDest);
-                dialog.showMessageBox( _MainWin, {
-                    message: "Export successfully completed.",
-                    type: "info",
-                    detail: "The file has been exported to: " + myFileDest
-                } );
-
-            }
-        })
     }
 }
 
@@ -336,17 +288,8 @@ ipcMain.handle('engine', async ( event, MyObject ) => {
         if( MyObject.method == "DatabaseCreate" ){ 
             var response = await DATA.CreateFile( MyObject.year );
         }
-        if( MyObject.method == "DatabaseSaveSegment" ){
-            var response = await DatabaseSaveSegment( MyObject );
-        }
-        if( MyObject.method == "DatabaseLoad" ){
-            var response = await DB.LoadFile( MyObject.file );
-        }
         if( MyObject.method == "GetDatabase" ){
             var response = await DATA.GetAll();
-        }
-        if( MyObject.method == "DatabaseSaveReceipt" ){
-            var response = await DatabaseSaveReceipt( MyObject );
         }
         console.log( "Response -> ");
         console.log( response );
@@ -359,29 +302,6 @@ ipcMain.handle('engine', async ( event, MyObject ) => {
     }
 });
 
-function DatabaseSaveReceipt( ReqObject ){
-    _JsonMemory.set( "receipt", JSON.stringify( ReqObject.data ) );
-    return true;
-}
-
-function DatabaseSaveSegment( ReqObject ){
-    if( ReqObject.segment == "supplier" ){
-        DB.supplier = ReqObject.data;
-        _JsonMemory.set( "supplier", JSON.stringify( ReqObject.data ) );
-        return true;
-    }
-    if( ReqObject.segment == "domain" ){
-        DB.domain = ReqObject.data;
-        _JsonMemory.set( "domain", JSON.stringify( ReqObject.data ) );
-        return true;
-    }
-    if( ReqObject.segment == "person" ){
-        DB.person = ReqObject.data;
-        _JsonMemory.set( "person", JSON.stringify( ReqObject.data ) );
-        return true;
-    }
-    return false;
-}
 
 // Debug Function for Tracing in the Process Console
 function _LOG(sText = "", oData = null){

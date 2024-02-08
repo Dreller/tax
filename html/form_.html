@@ -83,9 +83,9 @@
       switch( $(this).data("control") ){
         case "date-prompt":
           let thisDate = Picka.getDate();
-            const day = thisDate.getDate();
-            const month = thisDate.getMonth() + 1;
-            const year = thisDate.getFullYear();
+            const day = String( thisDate.getDate() ).padStart(2, '0');
+            const month = String( thisDate.getMonth() + 1 ).padStart(2, '0');
+            const year = String( thisDate.getFullYear() );
           objData[$(this).data("map")] = `${year}${month}${day}`;
           break;
         default:
