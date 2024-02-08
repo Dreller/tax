@@ -1,0 +1,131 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';" />
+    <script src="../node_modules/jquery/dist/jquery.min.js"></script>
+    <script src="../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/core.js"></script>
+    <script src="../node_modules/pikaday/pikaday.js"></script>
+    <script src="../node_modules/datatables.net/js/jquery.dataTables.min.js"></script>
+    <script src="../node_modules/datatables.net-bs5/js/dataTables.bootstrap5.min.js"></script>
+    <script src="../node_modules/datatables.net-buttons/js/dataTables.buttons.min.js"></script>
+    <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../node_modules/bootstrap-icons/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="../node_modules/pikaday/css/pikaday.css">
+    <link rel="stylesheet" href="../node_modules/datatables.net-bs5/css/dataTables.bootstrap5.min.css">
+    <script>
+      
+    </script>
+    <title>{AppName}</title>
+  </head>
+  <body class="container-fluid">
+
+
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header my-2 pb-1 px-2 border-bottom">
+        <h5 class="modal-title">Receipt Form</h5>
+        <button type="button" class="btn-close" aria-label="Close" onclick="CloseWin();"></button>
+      </div>
+      <div class="modal-body">
+      <!-- Receipt Form -->
+      <form class="row g-3">
+        <div class="col-md-6">
+          <label for="lstPerson" class="form-label">Person</label>
+          <select class="form-select" id="lstPerson" aria-label="Person" data-map="person" data-source="person"></select>
+        </div>
+        <div class="col-md-6">
+          <label for="lstDomain" class="form-label">Expense Domain</label>
+          <select class="form-select" id="lstDomain" aria-label="Domain" data-map="domain" data-source="domain"></select>
+        </div>
+        <div class="col-md-6">
+          <label for="lstSupplier" class="form-label">Supplier</label>
+          <select class="form-select" id="lstSupplier" aria-label="Supplier" data-map="supplier" data-source="supplier" onchange="receiptSupplierInfo();"></select>
+        </div>
+        <div class="col-md-6">
+          &nbsp;
+        </div>
+        <div class="col-md-6">
+          <label for="dtDate" class="form-label">Receipt Date</label>
+          <input type="text" class="form-control" id="dtDate" placeholder="" data-map="date">
+        </div>
+        <div class="col-md-6">
+          <label for="txtReference" class="form-label">Receipt Reference</label>
+          <input type="text" class="form-control" id="txtReference" placeholder="" data-map="ref">
+        </div>
+        <div class="col-md-4">
+          <label for="receiptAmount" class="form-label text-end">Full Amount</label>
+          <input type="number" min="0" max="999999" step="0.01" class="form-control text-end" id="receiptAmount" data-map="amount" onchange="receiptCalculate();">
+        </div>
+        <div class="col-md-4">
+          <label for="receiptRefund" class="form-label text-end">Insured Amount</label>
+          <input type="number" min="0" max="999999" step="0.01" class="form-control text-end" id="receiptRefund" data-map="refund" onchange="receiptCalculate();">
+        </div>
+        <div class="col-md-4">
+          <label for="receiptPaid" class="form-label text-end">Paid Amount</label>
+          <input type="number" step="0.01" class="form-control-plaintext text-end" style="font-weight:bold;" id="receiptPaid" data-map="paid" readonly>
+        </div>
+        <div class="col-md-12">
+          <label for="txtComment" class="form-label">Comment</label>
+          <textarea class="form-control" id="txtComment" rows="3"></textarea>
+        </div>
+
+      </form>
+      </div>
+      <div class="modal-footer py-2 g-2">
+        <button type="button" class="btn btn-primary mx-3">Save changes</button>
+        <button type="button" class="btn btn-secondary" onclick="CloseWin();">Cancel</button>
+      </div>
+
+    </div>
+  </div>
+
+
+<script>
+
+
+  function CloseWin(){
+    Controller.Call( 'window-manager', { method: "close" } );
+  }
+
+  $(document).ready(function(){
+    Controller.Call( 'window-manager', { method: "get-data" } )
+    .then( (response) => {
+      window["taxData"] = response;
+      console.log( "Data received:" );
+      console.log( taxData );
+      
+      // Window Title
+      if( taxData.action == "add" ){
+        document.title = "New Receipt";
+      }else{
+        document.title = "Edit Receipt";
+      }
+
+      // Get Database
+      Controller.Call( 'data', { key: "get-all" } )
+      .then( (response) => {
+
+        // Prepare Form
+        (response.person).forEach( function( item ){
+          $("#lstPerson").append(`<option value="${item.id}">${item.name}</option>`);
+        });
+        (response.domain).forEach( function( item ){
+          $("#lstPerson").append(`<option value="${item.id}">${item.name}</option>`);
+        });
+
+
+        console.log( response );
+      });
+
+
+      
+
+
+    });
+  });
+</script>
+</body> </html>

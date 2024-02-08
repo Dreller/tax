@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';" />
+    <script src="../node_modules/jquery/dist/jquery.min.js"></script>
+    <script src="../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/core.js"></script>
+    <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../node_modules/bootstrap-icons/font/bootstrap-icons.min.css">
+    <script>
+      
+    </script>
+    <title>{AppName}</title>
+  </head>
+  <body class="container-lg">
+    <h1 id="AppTitle" class="display-6 pb-3 mb-3 border-bottom">{AppName}</h1>
+    <div id="LoadingProgress">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden" id="LoadingProgressLabel">Loading Database...</span>
+        </div>
+    </div>
+
+  </body>
+  <script>
+
+      $(document).ready(function(){
+        GetAppData();
+
+        // Load Actual DB in Memory
+        var FileName = (urlParams.get("file")).split(".")[0];
+        console.log( "FileName=" + FileName );
+        Controller.Call( 'engine', { method: "DatabaseLoad", file: FileName } )
+        .then( (response) => {
+            if( typeof response == "boolean" && response == true ){
+                window.location.replace('home.html' );
+            }else{
+                Tell( { title: "Error", content: "Error when attempting to load the database:<br> " + response } );
+                return;
+            }
+        });
+
+      });
+
+  </script>
+</html>

@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';" />
+    <script src="../node_modules/jquery/dist/jquery.min.js"></script>
+    <script src="../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/core.js"></script>
+    <script src="../node_modules/pikaday/pikaday.js"></script>
+    <script src="../node_modules/datatables.net/js/jquery.dataTables.min.js"></script>
+    <script src="../node_modules/datatables.net-bs5/js/dataTables.bootstrap5.min.js"></script>
+    <script src="../node_modules/datatables.net-buttons/js/dataTables.buttons.min.js"></script>
+    <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../node_modules/bootstrap-icons/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="../node_modules/pikaday/css/pikaday.css">
+    <link rel="stylesheet" href="../node_modules/datatables.net-bs5/css/dataTables.bootstrap5.min.css">
+    <script>
+      
+    </script>
+    <title>My Tax Receipts</title>
+  </head>
+  <body class="container-lg">
+    <div class="row mb-3 pb-3 border-bottom">
+        <div class="col lead" id="AppTitle" style="font-weight: 500;">My Tax Receipts</div>
+        <div class="col lead text-end" id="TaxYearTitle">{TaxYearTitle}</div>
+    </div>
+
+    <ul class="nav nav-tabs" id="homeTabs">
+      <!-- Menu - 
+            . User can select 'Everybody' to view all Receipts
+            . User can select a Person Name to filter Receipts for that person
+            . User can select 'Configuration' to get in Tables Configuration
+      -->
+      <li id="menuButtonContainer" class="nav-item dropdown">
+        <a id="navMenuButton" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#!" role="button" aria-expanded="false">Everybody</a>
+        <ul id="navMenuDropdown" class="dropdown-menu">
+
+          <li><button type="button" class="dropdown-item" id="menuDropdownAll" onclick="navPerson('all');">Everybody</button></li>
+          <li><hr class="dropdown-divider"></li>
+          <li><button type="button" class="dropdown-item" onclick="navConfig();">Configuration</button></li>
+        </ul>
+      </li>
+
+      <!-- These items are shown when user select "Configuration" in the dropdown menu. -->
+        <li class="nav-item" data-utility="nav-config" style="display:none;">
+          <button type="button" class="nav-link" data-list="config" data-config="supplier">Suppliers</a>
+        </li>
+        <li class="nav-item" data-utility="nav-config" style="display:none;">
+          <button type="button" class="nav-link" data-list="config" data-config="domain">Domains</a>
+        </li>
+        <li class="nav-item" data-utility="nav-config" style="display:none;">
+          <button type="button" class="nav-link" data-list="config" data-config="category">Categories</a>
+        </li>
+        <li class="nav-item" data-utility="nav-config" style="display:none;">
+          <button type="button" class="nav-link" data-list="config" data-config="person">Persons</a>
+        </li>
+      <!-- End of Configuration Options -->
+
+    </ul>
+
+    <div class="mt-3 d-grid gap-2 d-md-block">
+      <button type="button" class="btn btn-outline-primary btn-sm" onclick="navAddItem()">Add New</button>
+    </div>
+
+    <div id="activeList" class="container-lg">
+      <table id="mainTable" class="table table-hover"></table>
+    </div>
+
+  </body>
+
+  <script>
+
+    $(document).ready(function(){
+
+      Controller.Call( 'data', { key: "get-all"} )
+      .then( (response) => {
+        TAX["data"] = response;
+        $("#TaxYearTitle").html(TAX.data.meta.year);
+
+
+      // Draw Tabs (Add Domains as Tabs)
+        var sTabs = `<li class="nav-item" data-utility="nav-receipt">
+              <button type="button" class="nav-link" data-list="list" data-domain="all">All Receipts</a>
+            </li>`;
+        if( (TAX.data.domain).length > 0 ){
+          (TAX.data.domain).forEach( function(elem) {
+            sTabs = sTabs + `
+            <li class="nav-item" data-utility="nav-receipt">
+              <button type="button" class="nav-link" data-list="list" data-domain="${elem.id}">${elem.name}</a>
+            </li>`;
+          });
+          $("#menuButtonContainer").after( sTabs );
+        }
+      // Add Each person option in the dropdown menu
+      var sChoices = ``;
+      if( (TAX.data.person).length > 0 ){
+        ( TAX.data.person ).forEach( function( elem ){
+          sChoices = sChoices + `<li><button data-control="menu-person" type="button" class="dropdown-item" onclick="navPerson('${elem.id}');">${elem.name}</button></li>`;
+        });
+        $("#menuDropdownAll").before( sChoices );
+      }
+
+
+      
+
+      // Install Event Listeners
+        // Tabs
+          $("#homeTabs > li > button").on("click", function(){
+            $("#homeTabs > li > button").removeClass("active");
+            $(this).addClass("active");
+            switch( $(this).data("list") ){
+              case "receipt":
+                $("#receiptList").show();
+                $("#configList").hide();
+                Table_Receipt_Build();
+                break;
+              case "config":
+                TAX.menu = {
+                  mainSection: "configuration",
+                  subSection: $(this).data("config")
+                }
+                $("#receiptList").hide();
+                $("#configList").show();
+                tblBuild($(this).data("config"));
+                break;
+            }
+          });
+
+      });
+
+      });
+
+
+
+    function navConfig(){
+      TAX.menu = {
+        mainSection: "configuration",
+        subSection: ""
+      }
+
+      tblClear();
+
+      $("#navMenuButton").html("Configuration");
+      $(`[data-utility='nav-receipt']`).hide();
+      $(`[data-utility='nav-config']`).show();
+    }
+
+    function navConfigItem( configType = "" ){
+      TAX.menu = {
+        mainSection: "configuration",
+        subSection: configType
+      }
+      Table_Config_Build( configType );
+    }
+
+    function navPerson( sPerson ){
+      TAX.menu = {
+        mainSection: "home",
+        subSection: "all"
+      };
+      TAX.who = sPerson;
+
+      tblClear();
+
+      $(`[data-utility='nav-receipt']`).show();
+      $(`[data-utility='nav-config']`).hide();
+      if( sPerson == "all" ){
+        $("#navMenuButton").html("Everybody");
+        
+      }else{
+        let thisPerson = ( TAX.data.person ).find( x => x.id == sPerson );
+        $("#navMenuButton").html(thisPerson.name);
+      }
+      tblReceipts( sPerson, "all" );
+    }
+
+
+    function navAddItem(){
+      if( TAX.menu.mainSection == "configuration" ){
+        console.log( "Adding: " + TAX.menu.subSection );
+        Controller.Call( 'window-manager' , { method: "open", page: "form_.html", type: TAX.menu.subSection, action: "add", id: "0" } );        
+      }else{
+        console.log( "Adding a Receipt" );
+        Controller.Call( 'window-manager' , { method: "open", page: "form_.html", type: "receipt", action: "add", id: "0", who: TAX.who } ); 
+      }
+
+    }
+
+    function navEditItem( sGuid ){
+      if( TAX.menu.mainSection == "configuration" ){
+        console.log( "Editing: " + TAX.menu.subSection );
+        Controller.Call( 'window-manager' , { method: "open", page: "form_.html", type: TAX.menu.subSection, action: "edit", id: sGuid } );        
+      }else{
+        console.log( "Editing a Receipt" );
+        Controller.Call( 'window-manager' , { method: "open", page: "form_.html", type: "receipt", action: "edit", id: sGuid } ); 
+      }
+    }
+
+
+    function tblClear(){
+      if( TAX.datatable !== undefined ){
+        TAX.datatable.destroy();
+        $("#mainTable").empty();
+        TAX.datatable = undefined;
+      }
+    }
+
+    function tblRefresh(){
+      console.log( "Refreshing the table...." );
+      Controller.Call( 'data', { key: "get-all"} )
+      .then( (response) => {
+        TAX["data"] = response;
+
+          if( TAX.menu.mainSection == "configuration" ){
+            tblBuild( TAX.menu.subSection );
+          }else{
+            tblReceipts( TAX.who, TAX.menu.subSection );
+          }
+      });
+    }
+
+    function tblReceipts( sWho = "all", sWhat = "all" ){
+      var colDefn = [
+        { name: "when",   data: null,       title: "Date",      orderable: true,    render: function(d,t,r){ return d.date.substring(0,4) + "-" + d.date.substring(4,6) + "-" + d.date.substring(6)}},
+        { name: "who",    data: null,       title: "Person",    orderable: true,    render: function(d,t,r){ return TAX.data.person.find( x => x.id == d.person ).name }},
+        { name: "what",   data: null,       title: "Expense",   orderable: true,    render: function(d,t,r){ 
+          var thisCategory = TAX.data.category.find( x => x.id == d.category );
+          console.log( thisCategory );
+          return TAX.data.domain.find( x => x.id == thisCategory.domain ).name + " > " + thisCategory.name;
+        }},
+        { name: "where",    data: null,       title: "Supplier", orderable: true,    render: function(d,t,r){ return TAX.data.supplier.find( x => x.id == d.supplier ).name }},
+        { name: "amount",   data: "paid",     title: "Amount",   orderable: true,    render: $.fn.dataTable.render.number(" ", ",", 2, "", " $"), className: "dt-body-right" },
+        { name: "option", data: null, title: "", orderable: false, searchable:false, render: function(d,t,r){return `<button type="button" class="btn btn-sm btn-light" onclick="navEditItem('${d.id}');">Edit</button>`}}
+      
+      ];
+
+      tblClear();
+
+      // Filtered DataCollection
+      let dataColl = TAX.data.receipt;
+      if( sWho != "all"  ){
+        dataColl = dataColl.filter( x => x.person == sWho );
+      }
+      if( sWhat != "all"  ){
+        dataColl = dataColl.filter( x => x.category == sWhat );
+      }
+
+      TAX["datatable"] = $("#mainTable").DataTable({
+          data: dataColl,
+            lengthChange: false,
+            paging: false,
+            language: {
+              info: "Showing _TOTAL_ entries.",
+              infoEmpty: "This table is empty.",
+              infoFiltered: "  Filtered from _MAX_ records."
+            },
+            columns: colDefn,
+            buttons: ['pdf']
+        });
+
+    }
+
+
+    function tblBuild( configType ){
+        switch( configType ){
+          case "domain":
+            var colDefn = [
+              { name: "name", data: "name", title: "Domain Name" },
+              { name: "option", data: null, title: "", orderable: false, searchable:false, render: function(d,t,r){return `<button type="button" class="btn btn-light" onclick="navEditItem('${d.id}');">Edit</button>`}}
+            ];
+            var dataSrc = TAX.data.domain;
+            break;
+          case "category":
+            var colDefn = [
+              {  name: "dname", data: null, title: "Domain", render: function( data, type, row){ return data["domain"] != "" ? TAX.data.domain.find( x => x.id == data["domain"] ).name : "" } },
+              {  name: "name", data: "name", title: "Category Name" },
+              { name: "option", data: null, title: "", orderable: false, searchable:false, render: function(d,t,r){return `<button type="button" class="btn btn-sm btn-light" onclick="navEditItem('${d.id}');">Edit</button>`}}
+            ];
+            var dataSrc = TAX.data.category;
+            break;
+          case "person":
+          var colDefn = [
+              {  name: "name", data: "name", title: "Person Name" },
+              {  name: "initial", data: "initial", title: "Initials"},
+              {  name: "pName", data: null, title: "Partner", render: function( data, type, row){ return data["partner"] != "" ? TAX.data.person.find( x => x.id == data["partner"] ).name : "" } },
+              { name: "option", data: null, title: "", orderable: false, searchable:false, render: function(d,t,r){return `<button type="button" class="btn btn-sm btn-light" onclick="navEditItem('${d.id}');">Edit</button>`}}
+            ];
+            var dataSrc = TAX.data.person;
+            break;
+          case "supplier":
+          var colDefn = [
+              {
+                name: "name", data: "name", title: "Supplier Name"
+              },
+              {
+                name: "address", data: "address", title: "Address"
+              },
+              {
+                name: "phone", data: "phone", title: "Phone" 
+              },
+              {
+                name: "dName", data: null, title: "Expense Domain", render: function( data, type, row){ return data["domain"] != "" ? TAX.data.domain.find( x => x.id == data["domain"] ).name : "" }
+              },
+              { name: "option", data: null, title: "", orderable: false, searchable:false, render: function(d,t,r){return `<button type="button" class="btn btn-sm btn-light" onclick="navEditItem('${d.id}');">Edit</button>`}}
+            ];
+            var dataSrc = TAX.data.supplier;
+            break;
+        }
+        
+        tblClear();
+
+        TAX["datatable"] = $("#mainTable").DataTable({
+          data: dataSrc,
+            lengthChange: false,
+            paging: false,
+            language: {
+              info: "Showing _TOTAL_ entries.",
+              infoEmpty: "This table is empty.",
+              infoFiltered: "  Filtered from _MAX_ records."
+            },
+            columns: colDefn,
+            buttons: ['pdf']
+        });
+
+    }
+
+///////////////////////////////////////////////////////////
+//                    OLD CODE BELOW                     //
+///////////////////////////////////////////////////////////
+var currentConfigItem = "";
+    var currentConfigType = "";
+
+    var currentReceiptId = "";
+    var picker;
+
+    var dt_receipt;
+
+    function AddNew(){
+      var ThisObjectType = $("#homeTabs button.nav-link.active").first().data("list");
+      console.log( "Adding a new: " + ThisObjectType );
+      Controller.Call( 'window-manager' , { method: "open", page: "form_receipt.html", action: "add", id: "0" } );
+    }
+    function AddNew2(){
+      var ThisObjectType = $("#homeTabs button.nav-link.active").first().data("list");
+      console.log( "Adding a new: " + ThisObjectType );
+      Controller.Call( 'window-manager' , { method: "open", page: "form_.html", type: ThisObjectType, action: "add", id: "0" } );
+    }
+    
+
+
+    function test(){
+      Controller.Transmit( 'engine', { method: "test", data: {} } );
+    }
+
+    function backHome(){
+      $("#AppSubtitle").removeClass("display-6");
+      $("#AppSubtitle").html(`<button type="button" class="btn btn-primary" onclick="showReceipt(this);" data-reckey="">Add a Receipt</button>`);
+      currentConfigItem = "";
+      currentConfigType = "";
+      $("#configList").hide();
+    }
+
+    function receiptSupplierInfo(){
+      var thisSupplier = Database.supplier.filter( x => x.id == $("#receiptSupplier").val() )[0];
+      if( thisSupplier === undefined ){
+        $("#receiptSupplierInfo").html("");
+      }else{
+        $("#receiptSupplierInfo").html( `${thisSupplier.address}<br>${thisSupplier.phone}<br>${thisSupplier.tax}`  );
+      }
+    }
+
+    function receiptCalculate(){
+      var FullAmount = $("#receiptAmount").val();
+      if( FullAmount === undefined ){
+        FullAmount = 0;
+      }
+      FullAmount = (Math.round(FullAmount * 100) / 100).toFixed(2);
+      $("#receiptAmount").val(FullAmount);
+
+      var RefundAmount = $("#receiptRefund").val();
+      if( RefundAmount === undefined ){
+        RefundAmount = 0;
+      }
+      RefundAmount = (Math.round(RefundAmount * 100) / 100).toFixed(2);
+      $("#receiptRefund").val(RefundAmount);
+
+      var NetAmount = FullAmount - RefundAmount;
+      NetAmount = (Math.round(NetAmount * 100) / 100).toFixed(2);
+      $("#receiptPaid").val( NetAmount );
+
+      console.log( `${FullAmount} - ${RefundAmount} = ${NetAmount}` );
+    }
+
+    function saveReceipt(){
+      if( currentReceiptId.length > 0 ){
+        Database.receipt = Database.receipt.filter( x => x.id != currentReceiptId );
+      }else{
+        currentReceiptId = crypto.randomUUID();
+      }
+
+      // Build the Receipt Object
+      var myReceipt = {};
+      $("#modalReceipt input,select,textarea").each( function( ndx, thisControl ){
+        var thisMap = $(thisControl).data("map");
+        myReceipt[thisMap] = $(thisControl).val();
+      });
+
+      console.log( "Receipt to save: " );
+      console.dir( myReceipt );
+      // Add receipt to Array
+      Database.receipt.push( myReceipt );
+      Controller.Call( 'engine', { method: "DatabaseSaveReceipt", data: Database.receipt } );
+
+    }
+
+    function showReceipt( caller ){
+      currentReceiptId = $(caller).data('reckey');
+      var thisDomModal = "modalReceipt";
+      var thisModal = new bootstrap.Modal( $("#" + thisDomModal ) );
+      console.log( "showReceipt, ID:" + currentReceiptId);
+      // Reset Form
+      $("#" + thisDomModal + " input,select,textarea").each( function( ndx, thisControl ){
+        $(thisControl).val("");
+        // Process Select Lists
+        console.log( " Control= " + thisControl.id );
+        console.log( " Datasource=" + $(thisControl).data("source") );
+        var thisSource = $(thisControl).data("source");
+        if( thisSource !== undefined ){
+          $(thisControl).empty();
+          $(thisControl).append(`<option value="">None</option>`);
+          Database[thisSource].forEach( function( thisItem ){
+            $(thisControl).append(`<option value="${thisItem.id}">${thisItem.name}</option>`);
+          } )
+        }
+      });
+
+      // Retrieve the existing Data
+      if( currentReceiptId.length > 0 ){
+        var thisReceipt = Database.receipt.filter( x => x.id == currentReceiptId )[0];
+      }
+
+    // Fill Form with Existing Data
+      if( thisReceipt !== undefined && currentReceiptId.length > 0 ){
+        $("#" + thisDomModal + " input,select,textarea").each( function( ndx, thisControl ){
+          var thisMap = $(thisControl).data("map");
+          $(thisControl).val( thisReceipt[thisMap] );
+        });
+      }
+
+    // Show Form
+      thisModal.show();
+    }
+
+    function receiptList(){
+
+    }
+
+    function saveConfigItem(){
+      if( currentConfigItem.length > 0 ){
+        Database[currentConfigType] = Database[currentConfigType].filter( x => x.id != currentConfigItem );
+      }else{
+        currentConfigItem = crypto.randomUUID();
+      }
+
+    // Initialize the object with it's ID
+      var newObject = {id: currentConfigItem }
+    // Complete the object with data from the Form
+      var thisDomModal = "configModal" + CT.ProperCase( currentConfigType );
+      $("#" + thisDomModal + " input,select,textarea").each( function( ndx, thisControl ){
+        var thisMap = $(thisControl).data("map");
+        newObject[thisMap] = $(thisControl).val();
+      });
+    // Add Object to the local dataset
+      Database[currentConfigType].push( newObject );
+    // Send data to Database
+      Controller.Transmit( 'engine', { method: "DatabaseSaveSegment", segment: currentConfigType, data: Database[currentConfigType] } );
+    // Rebuild the list
+      showConfigList( currentConfigType );
+    // Clear current Item
+      currentConfigItem = "";
+    
+    }
+
+    function showConfigItem( caller ){
+      currentConfigItem = $(caller).data('confkey');
+      var thisDomModal = "configModal" + CT.ProperCase( currentConfigType );
+      var thisModal = new bootstrap.Modal( $("#" + thisDomModal ) );
+
+    // Reset form
+      $("#" + thisDomModal + " input,select,textarea").each( function( ndx, thisControl ){
+        $(thisControl).val("");
+        // Process Select Lists
+        console.log( " Control= " + thisControl.id );
+        console.log( " Datasource=" + $(thisControl).data("source") );
+        var thisSource = $(thisControl).data("source");
+        if( thisSource !== undefined ){
+          $(thisControl).empty();
+          $(thisControl).append(`<option value="">None</option>`);
+          Database[thisSource].forEach( function( thisItem ){
+            $(thisControl).append(`<option value="${thisItem.id}">${thisItem.name}</option>`);
+          } )
+        }
+      });
+
+    // Retrieve the existing Data
+      if( currentConfigItem.length > 0 ){
+        var thisItem = Database[currentConfigType].filter( x => x.id == currentConfigItem )[0];
+      }
+
+    // Fill Form with Existing Data
+      if( thisItem !== undefined && currentConfigItem.length > 0 ){
+        $("#" + thisDomModal + " input,select,textarea").each( function( ndx, thisControl ){
+          var thisMap = $(thisControl).data("map");
+          $(thisControl).val( thisItem[thisMap] );
+        });
+      }
+
+    // Show Form
+      thisModal.show();
+    }
+
+
+
+    function showConfigList( listType = "supplier" ){
+
+        $("#configList").removeClass("invisible");
+        $("#configTableHead").find("tr").remove();
+        $("#configTableBody").find("tr").remove();
+        currentConfigType = listType;
+
+        $("#AppSubtitle").addClass("display-6");
+
+        if( listType == "supplier" ){
+            $("#AppSubtitle").html("Suppliers");
+            $("#configTableHead").append(`<tr><th>Domain</th><th>Name</th><th>Address</th><th>Phone</th><th>Other Contact</th></tr>`);
+            Database.supplier.forEach( function( thisItem ){
+                $("#configTableBody").append(`<tr data-confkey="${thisItem.id}" onclick="showConfigItem(this);"><td>${ Database.domain.filter( x=> x.id == thisItem.domain )[0].name }</td><td>${thisItem.name}</td><td>${thisItem.address}</td><td>${thisItem.phone}</td><td>${thisItem.contact}</td></tr>`);
+            });
+        }
+        if( listType == "person" ){
+            $("#AppSubtitle").html("Persons");
+            $("#configTableHead").append(`<tr><th>Name</th><th>Initial</th><th>Partner</th></tr>`);
+            Database.person.forEach( function( thisItem ){
+                $("#configTableBody").append(`<tr data-confkey="${thisItem.id}" onclick="showConfigItem(this);"><td>${thisItem.name}</td><td>${thisItem.initial}</td><td>${ thisItem.partner != "" ? Database.person.filter( x=> x.id == thisItem.partner )[0].name : "" }</td></tr>`);
+            });
+        }
+        if( listType == "domain" ){
+            $("#AppSubtitle").html("Expense Domains");
+            $("#configTableHead").append(`<tr><th>Name</th></tr>`);
+            Database.domain.forEach( function( thisItem ){
+                $("#configTableBody").append(`<tr data-confkey="${thisItem.id}" onclick="showConfigItem(this);"><td>${thisItem.name}</td></tr>`);
+            });
+        }
+        if( listType == "category" ){
+            $("#AppSubtitle").html("Expense Categories");
+            $("#configTableHead").append(`<tr><th>Domain</th<th>Name</th></tr>`);
+            Database.category.forEach( function( thisItem ){
+                $("#configTableBody").append(`<tr data-confkey="${thisItem.id}" onclick="showConfigItem(this);"><td>${thisItem.domain}</td><td>${thisItem.name}</td></tr>`);
+            });
+        }
+
+    }
+
+
+      function Table_Receipt_Build(){
+        if( window["tableReceipt"] !== undefined ){
+          console.log("DataTable already exists - Destroying...");
+          window["tableReceipt"].destroy();
+          $("#receiptTable").empty();
+        }
+        window["tableReceipt"] = $("#receiptTable")
+        .DataTable( {
+            data: Database.receipt,
+            lengthChange: false,
+            paging: false,
+            language: {
+              info: "Showing _TOTAL_ entries.",
+              infoEmpty: "This table is empty.",
+              infoFiltered: "  Filtered from _MAX_ records."
+            },
+            columns: [
+              { name: "date", data: "date", type: "date", title: "Date" },
+              { name: "pName", data: null, title: "Person", render: function( data, type, row){ return data["person"] != "" ? Database.person.find( x => x.id == data["person"] ).name : "" } },
+              { name: "dName", data: null, title: "Domain", render: function( data, type, row){ return data["domain"] != "" ? Database.domain.find( x => x.id == data["domain"] ).name : "" } },
+              { name: "sName", data: null, title: "Supplier", render: function( data, type, row){ return data["supplier"] != "" ? Database.supplier.find( x => x.id == data["supplier"] ).name : "" } },
+              { name: "amount", data: "amount", title: "Amount"},
+              { name: "refund", data: "refund", title: "Refund" },
+              { name: "net", data: "paid", title: "Net Amount" },
+              { name: "option", data: null, title: "", orderable: false, searchable:false, render: function(d,t,r){return `<button type="button" class="btn btn-sm btn-primary" onclick="navEditItem('${d.id}');">Edit</button>`}}
+            ],
+            columnDefs: [
+              { targets: [-2, -3, -4], className: "text-right", type: "num-fmt", render: DataTable.render.number( null, null, 2, "$" ) }
+            ]
+          } );
+      }
+
+      function Table_Receipt_Update(){
+        tableReceipt.draw();
+      }
+ 
+
+  </script>
+</html>

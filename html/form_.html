@@ -1,0 +1,253 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';" />
+    <script src="../node_modules/jquery/dist/jquery.min.js"></script>
+    <script src="../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/core.js"></script>
+    <script src="../node_modules/pikaday/pikaday.js"></script>
+    <script src="../node_modules/datatables.net/js/jquery.dataTables.min.js"></script>
+    <script src="../node_modules/datatables.net-bs5/js/dataTables.bootstrap5.min.js"></script>
+    <script src="../node_modules/datatables.net-buttons/js/dataTables.buttons.min.js"></script>
+    <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../node_modules/bootstrap-icons/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="../node_modules/pikaday/css/pikaday.css">
+    <link rel="stylesheet" href="../node_modules/datatables.net-bs5/css/dataTables.bootstrap5.min.css">
+    <script>
+      
+    </script>
+    <title>{AppName}</title>
+  </head>
+  <body class="container-fluid">
+
+
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header my-2 pb-1 px-2 border-bottom">
+        <h5 id="WindowTitle" class="modal-title">Form...</h5>
+        <button type="button" class="btn-close" aria-label="Close" onclick="CloseWin();"></button>
+      </div>
+      <div class="modal-body">
+
+
+      <form id="MainForm" class="row g-3">
+
+
+      </form>
+      </div>
+      <div class="modal-footer py-2 g-2">
+        <button type="button" class="btn btn-primary mx-3" onclick="SaveData();">Save changes</button>
+        <button type="button" class="btn btn-secondary" onclick="CloseWin();">Cancel</button>
+      </div>
+
+    </div>
+  </div>
+
+
+<script>
+  var Picka;
+
+  function CloseWin(){
+    Controller.Call( 'window-manager', { method: "close" } );
+  }
+
+  function SaveData(){
+    // Validate if all required prompts are filled.
+    var iErrors = 0;
+    $("[data-required='Y']").each( function(){
+      if( !$(this).val() ){
+        $(this).removeClass("is-valid");
+        $(this).addClass("is-invalid");
+          if( $(`#validationMessage${ $(this).attr("id") }`).length == 0 ){
+            $(this).after(`<div id="validationMessage${ $(this).attr("id") }" class="invalid-feedback">Required field.</div>`);
+          }
+        iErrors++;
+      }else{
+        $(this).removeClass("is-invalid");
+        $(this).addClass("is-valid");
+        if( $(`#validationMessage${ $(this).attr("id") }`).length != 0 ){
+          $(`#validationMessage${ $(this).attr("id") }`).remove();
+        }
+      }
+    });
+    if( iErrors > 0 ){
+      return;
+    }
+
+    var objData = {};
+
+    $("[data-map]").each( function( ndx, elem ){
+      switch( $(this).data("control") ){
+        case "date-prompt":
+          let thisDate = Picka.getDate();
+            const day = String( thisDate.getDate() ).padStart(2, '0');
+            const month = String( thisDate.getMonth() + 1 ).padStart(2, '0');
+            const year = String( thisDate.getFullYear() );
+          objData[$(this).data("map")] = `${year}${month}${day}`;
+          break;
+        default:
+        objData[$(this).data("map")] = ( $(this).val() == null ) ? "" : $(this).val();
+      }
+
+    });
+    if( taxData.action == "add" ){
+      objData["id"] = crypto.randomUUID();
+    }else{
+      objData["id"] = taxData.id;
+    }
+    
+    console.log( "This is the Object to save: ");
+    console.log( objData );
+
+    var objRequest = {
+      key: "save",
+      action: taxData.action,
+      table: taxData.type,
+      data: objData
+    }
+
+    Controller.Call( 'data', objRequest )
+    .then( (response) => {
+      CloseWin();
+    });
+
+  }
+
+  $(document).ready(function(){
+    Controller.Call( 'window-manager', { method: "get-data" } )
+    .then( (response) => {
+      window["taxData"] = response;
+      console.log( "Data received:" );
+      console.log( taxData );
+
+      // Window Title
+      let WinTitle = ( taxData.action == "add" ? "New ":"Edit " ) + CT.ProperCase( taxData.type );
+      document.title = WinTitle;
+      $("#WindowTitle").html( WinTitle );
+
+      // Get Database
+      Controller.Call( 'data', { key: "get-all" } )
+      .then( (response) => {
+        window['_DATA'] = response;
+
+        BuildForm();
+      });
+    });
+  });
+
+  function BuildForm(){
+    switch( taxData.type ){
+      case "receipt":
+        $("#MainForm").append(
+          CreateObject( "select", { id: "lstPerson", label: "Person", map: "person", source: "person", divSize: 6, required:true } ) +
+          CreateObject( "categories", { id: "lstCategory", label: "Category", map: "category", source: "category", divSize: 6, onchange: "filterSuppliers();", required:true} ) + 
+          CreateObject( "select", { id: "lstSupplier", label: "Supplier", map: "supplier", source: "supplier", divSize: 6, onchange: "showSupplierInfo();", required:true} ) +
+          CreateObject( "p", { id: "labelSupplier", divSize: 6 } ) + 
+          CreateObject( "date", { id: "dtDate", label: "Receipt Date", map: "date", divSize: 6, required:true } ) + 
+          CreateObject( "text", { id: "txtReference", label: "Receipt Reference", map: "ref", divSize: 6 } ) + 
+          CreateObject( "amount", { id: "txtAmount", label: "Full Amount", map: "amount", divSize: 4, cashtype: "raw", required:true} ) + 
+          CreateObject( "amount", { id: "txtRefund", label: "Insured Amount", map: "refund", divSize: 4, cashtype: "less" } ) + 
+          CreateObject( "amount", { id: "txtPaid", label: "Paid Amount", map: "paid", divSize: 4, readonly: true, cashtype: "net"} ) + 
+          CreateObject( "memo", { id: "txtComment", label: "Comment", map: "note", divSize: 12 } )
+        );break;
+      case "domain":
+        $("#MainForm").append(
+            CreateObject( "text", { id: "txtName", label: "Expense Domain Name", map: "name", divSize: 6, required:true} )
+        );break;
+      case "category":
+        $("#MainForm").append(
+            CreateObject( "text", { id: "txtName", label: "Category Name", map: "name", divSize: 6, required:true} ) + 
+            CreateObject( "select", { id: "lstDomain", label: "Expense Domain", map: "domain", source: "domain", divSize: 6 , required:true} )
+        );break;
+      case "supplier":
+        $("#MainForm").append(
+          CreateObject( "text", { id: "txtName", label: "Supplier Name", map: "name", divSize: 6, required:true } ) + 
+          CreateObject( "select", { id: "lstDomain", label: "Expense Domain", map: "domain", source: "domain", divSize: 6 , required:true} ) + 
+          CreateObject( "memo", { id: "txtAddress", label: "Address", map: "address", divSize: 6 } ) + 
+          CreateObject( "text", { id: "txtPhone", label: "Phone Number", map: "phone", divSize: 6 } ) + 
+          CreateObject( "text", { id: "txtTax", label: "Tax Registration References", map: "tax", divSize: 12 } )
+        );break;
+      case "person":
+        $("#MainForm").append(
+          CreateObject( "text", { id: "txtName", label: "Person Name", map: "name", divSize: 6, required:true } ) + 
+          CreateObject( "text", { id: "txtInitial", label: "Initials", map: "initial", divSize: 3 , required:true} ) +
+          CreateObject( "select", {id: "lstPartner", label: "Partner", map: "partner", source: "person", divSize: 6} )
+        );break;
+    }
+
+      // Are we in EDIT mode ?  If Yes, we need to set the form with actual data.
+      if( taxData.action == "edit" ){
+        var ThisObject = _DATA[taxData.type].find( x => x.id == taxData.id );
+        $("[data-map]").each( function( ndx, elem ){
+          $(this).val( ThisObject[$(this).data("map")] );
+        });
+      }
+
+      // Am I adding a receipt and is there a 'who' property?
+      if( taxData.action == "add" && taxData.type == "receipt" && taxData.hasOwnProperty( "who" ) ){
+        if( taxData.who != "all" ){
+          $("#lstPerson").val( taxData.who );
+        }
+      }
+
+      // Instance of Pikaday
+      if( $("input[data-control='date-prompt']").length > 0 ){
+        Picka = new Pikaday({
+          field: $("input[data-control='date-prompt']")[0],
+          format: 'DD MMM YYYY',
+          parse(dateString, format) {
+          // dateString is the result of `toString` method
+            const day = parseInt( dateString.substring(6) );
+            const month = parseInt( dateString.substring(4,6) ) - 1;
+            const year = parseInt( dateString.substring(0,4) );
+            return new Date(year, month, day);
+          }
+        });
+      }
+
+      // Currency Setup
+      $("[data-control='cash-prompt']").each( function(){
+        $(this).invokeCurrency();
+      });
+
+
+  }
+
+  function showSupplierInfo(){
+    let thisSupplierId = $("#lstSupplier").val();
+    let thisSupplier = ( _DATA.supplier ).find( x => x.id == thisSupplierId );
+    $("#labelSupplier").html(`<p><strong>${thisSupplier.name}</strong><br>${(thisSupplier.address).replace(/\n/g, '<br>')}</p>`);
+  }
+
+  function filterSuppliers(){
+    $("#lstSupplier").empty();
+    $("#labelSupplier").html(``);
+    let thisDomain = _DATA.category.find( x => x.id == $("#lstCategory").val() ).domain;
+    $("#lstSupplier").append(`<option value="" selected disabled hidden></option>`);
+    ( _DATA.supplier ).filter( x => x.domain == thisDomain ).forEach( function( elem ){
+      $("#lstSupplier").append(`<option value="${elem.id}">${elem.name}</option>`);
+    });
+  }
+
+  $.fn.invokeCurrency = function() {
+    $(this).change( function () {
+
+      let cashRaw = Number( "0" + $("#txtAmount").val() ).toFixed(2);
+      let cashRef = Number( "0" + $("#txtRefund").val() ).toFixed(2);
+      let cashNet = Number( 0 + cashRaw - cashRef ).toFixed(2);
+
+      $("#txtAmount").val( cashRaw );
+      $("#txtRefund").val( cashRef );
+      $("#txtPaid").val( cashNet );
+
+      console.log( "Calculation of Amounts: ");
+      console.log( "   Raw Amount :    " + $("#txtAmount").val() );
+      console.log( "   Less Amount:    " + $("#txtRefund").val() );
+      console.log( "   Net Amount :    " + $("#txtPaid").val() );
+    });
+  }
+</script>
+</body> </html>

@@ -1,0 +1,26 @@
+{
+  "name": "tax",
+  "version": "0.0.1",
+  "description": "Utility to compile Receipts and other Information for Canadian Taxes.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "electron . --trace-warnings",
+    "rebuild": "./node_modules/.bin/electron-rebuild",
+    "refresh": "npm update"
+  },
+  "author": "Dreller",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^28.1.1"
+  },
+  "dependencies": {
+    "bootstrap": "^5.3.2",
+    "bootstrap-icons": "^1.11.3",
+    "datatables.net-bs5": "^1.13.8",
+    "datatables.net-buttons-bs5": "^2.4.2",
+    "datatables.net-keytable-bs5": "^2.11.0",
+    "jquery": "^3.7.1",
+    "pikaday": "^1.8.2"
+  }
+}

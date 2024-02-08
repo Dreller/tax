@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';" />
+    <script src="../node_modules/jquery/dist/jquery.min.js"></script>
+    <script src="../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/core.js"></script>
+    <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../node_modules/bootstrap-icons/font/bootstrap-icons.min.css">
+    <script>
+      
+    </script>
+    <title>My Tax Receipts</title>
+  </head>
+  <body class="container-lg">
+    <h1 id="AppTitle" class="display-6 pb-3 mb-3 border-bottom">My Tax Receipts</h1>
+    <div class="p-3">
+        <div class="row mb-3 form-floating">
+            <input type="number" class="form-control" id="txtYear" placeholder="0000" value="">
+            <label for="txtYear">Tax Year</label>
+        </div>
+        <button type="button" class="btn btn-primary" onClick="NewDatabase();">Create</button>
+        <a class="btn btn-secondary" href="welcome.html">Cancel</a>
+    </div>
+
+  </body>
+  <script>
+
+    function NewDatabase(){
+        // Check if this Database name already exists.
+        var NewName = $("#txtYear").val();
+        if( NewName == "" ){
+            Tell( { title: "Missing Year", content: "Tax Year is required."} );
+            return;
+        }
+
+        // Request new database
+        Controller.Call( 'engine', { method: "DatabaseCreate", year: NewName } );
+
+    }
+
+      $(document).ready(function(){
+        GetAppData();
+
+      });
+  </script>
+</html>
