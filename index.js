@@ -11,18 +11,23 @@ console.log( process.env );
 // Initialize Variables at the Main Level
     var _Database = {};
     var _Info = {};
-
+    var _App = {};
 
     // Legacy
     var _Debug = true;
-    var _SourceFilesList;
-
-    var _JsonMemory;
-    var _JsonMemoryFile = "";
-    var _JsonMemoryFilePath = "";
     var _MainWin;
     var _SubWin;
     var _SubWinData;
+
+// UI Lexicon
+    _App["lang"] = ( process.env.LANG ).substring(0,2).toLowerCase();
+    if( _App.lang != "fr" && _App.lang != "en" ){
+        _App.lang = "en";
+    }
+    _App.lang = "fr";
+    _App["lexicon"] = require(`./lang/${_App.lang}.js`);
+    console.log( "= LEXICON === " + (_App.lang).toUpperCase() + " =" );
+    console.log( _App.lexicon );
 
 // App-level Triggers
 app.whenReady().then(() => {
@@ -41,7 +46,7 @@ function OpenMainWindow(){
         width: ( _Debug ? 1500 : 1300 ),
         height: 900,
         center: true,
-        autoHideMenuBar: true,
+        autoHideMenuBar: !_Debug,
         webPreferences: {
             preload: path.join( __dirname  + '/preload.js' ),
             nodeIntegration: true,
@@ -65,7 +70,7 @@ function ChildWindow( sTargetPage, oArgs = {} ){
         width: 800,
         height: 700,
         center: true,
-        autoHideMenuBar: true,
+        autoHideMenuBar: !_Debug,
         titleBarStyle: 'hidden',
         webPreferences: {
             preload: path.join( __dirname  + '/preload.js' )
@@ -95,6 +100,12 @@ const DB = {
 }
 
 const TOOL = {
+    /**
+     * Check if an Array contains a set of keys.
+     * @param {*} RequiredKeys 
+     * @param {*} BaseArray 
+     * @returns 
+     */
     ArrayContains: function( RequiredKeys = [], BaseArray = [] ){
         _LOG( ">> Tool ArrayContains() " );
         _LOG( "Required Keys:", RequiredKeys );
@@ -120,10 +131,10 @@ const DATA = {
 
         // Ask user where to save the file...
         dialog.showSaveDialog( _MainWin, {
-            title: "New Database Location",
-            buttonLabel: "Create here",
+            title: _App.lexicon.welcome.fdialog.createTitle,
+            buttonLabel: _App.lexicon.welcome.fdialog.createButton,
             filters: [
-                { name: "CompilaTAX files", extensions: ["ctax"]}
+                { name: _App.lexicon.welcome.fdialog.fileFilter, extensions: ["ctax"]}
             ]
         } ).then( result => {
             if( result.canceled == false ){
@@ -158,10 +169,10 @@ const DATA = {
 
         // Ask user to browse to the file to load...
         dialog.showOpenDialog( _MainWin, {
-            title: "Open a Database",
-            buttonLabel: "Open",
+            title: _App.lexicon.welcome.fdialog.openTitle,
+            buttonLabel: _App.lexicon.welcome.fdialog.openButton,
             filters: [
-                { name: "CompilaTAX files", extensions: ["ctax"]}
+                { name: _App.lexicon.welcome.fdialog.fileFilter, extensions: ["ctax"]}
             ],
             properties: [
                 "openFile"
