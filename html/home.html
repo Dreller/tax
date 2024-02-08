@@ -127,9 +127,12 @@
             }
           });
 
-      });
+        // Load All receipts.
+          tblReceipts();
 
       });
+
+});
 
 
 
@@ -172,7 +175,7 @@
         let thisPerson = ( TAX.data.person ).find( x => x.id == sPerson );
         $("#navMenuButton").html(thisPerson.name);
       }
-      tblReceipts( sPerson, "all" );
+      tblReceipts();
     }
 
 
@@ -215,12 +218,13 @@
           if( TAX.menu.mainSection == "configuration" ){
             tblBuild( TAX.menu.subSection );
           }else{
-            tblReceipts( TAX.who, TAX.menu.subSection );
+            tblReceipts();
           }
       });
     }
 
-    function tblReceipts( sWho = "all", sWhat = "all" ){
+    function tblReceipts(){
+
       var colDefn = [
         { name: "when",   data: null,       title: "Date",      orderable: true,    render: function(d,t,r){ return d.date.substring(0,4) + "-" + d.date.substring(4,6) + "-" + d.date.substring(6)}},
         { name: "who",    data: null,       title: "Person",    orderable: true,    render: function(d,t,r){ return TAX.data.person.find( x => x.id == d.person ).name }},
@@ -239,11 +243,11 @@
 
       // Filtered DataCollection
       let dataColl = TAX.data.receipt;
-      if( sWho != "all"  ){
-        dataColl = dataColl.filter( x => x.person == sWho );
+      if( TAX.who != "all"  ){
+        dataColl = dataColl.filter( x => x.person == TAX.who );
       }
-      if( sWhat != "all"  ){
-        dataColl = dataColl.filter( x => x.category == sWhat );
+      if( TAX.menu.subSection != "all"  ){
+        dataColl = dataColl.filter( x => x.category == TAX.menu.subSection );
       }
 
       TAX["datatable"] = $("#mainTable").DataTable({

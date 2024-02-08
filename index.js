@@ -38,8 +38,8 @@ app.on('window-all-closed', () => {
 // Main Window
 function OpenMainWindow(){
     _MainWin = new BrowserWindow({
-        width: 1250,
-        height: 600,
+        width: ( _Debug ? 1500 : 1300 ),
+        height: 900,
         center: true,
         autoHideMenuBar: true,
         webPreferences: {
@@ -50,7 +50,7 @@ function OpenMainWindow(){
     });
     _MainWin.loadFile('./html/welcome.html');
     if( _Debug ){
-        // _MainWin.webContents.openDevTools();
+        _MainWin.webContents.openDevTools();
     }
 }
 
@@ -74,6 +74,9 @@ function ChildWindow( sTargetPage, oArgs = {} ){
 
     _SubWin.loadFile( './html/' + sTargetPage );
     _SubWin["tax"] = _SubWinData;
+    if( _Debug ){
+        _SubWin.webContents.openDevTools();
+    }
     _SubWin.once('ready-to-show', () => {
         _SubWin.show()
     });

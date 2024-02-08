@@ -4,9 +4,9 @@ const debug = true;
 var TAX = {
     menu: {
       mainSection: "home",
-      subSection: ""
+      subSection: "all"
     },
-    who: ""
+    who: "all"
   };
 
 const CT = {
